@@ -1,0 +1,5 @@
+# TEST FIXTURE — clean repo root for the secret-leak negative control.
+# .env is ignored so secrets never get committed (the good path).
+.env
+.env.*
+node_modules/

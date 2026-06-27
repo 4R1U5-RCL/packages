@@ -1,0 +1,13 @@
+{
+  "control": "revoke",
+  "surface": "repo",
+  "defends": "REVOKE discipline on PII tables: baseline grants stripped from anon AND public before any explicit grant (the Tessera DEFECT-1 class).",
+  "revoke_required": ["leads", "form_submissions", "seo_events"],
+  "globs": [
+    "packages/db/migrations/**/*.sql",
+    "packages/db/**/policies/**/*.sql",
+    "apps/web/db/migrations/**/*.sql",
+    "apps/*/db/migrations/**/*.sql"
+  ],
+  "note": "Fixed evidence manifest — what the revoke check audits is not model discretion (WORKING_METHOD §1). revoke_required is the PII set that must have anon+public default grants revoked. Globs verified against the real /studio repo layout (mirror rls.json)."
+}

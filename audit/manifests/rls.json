@@ -1,0 +1,12 @@
+{
+  "control": "rls",
+  "surface": "repo",
+  "defends": "RLS by default: every app-data table ships row-level security (baseline §5).",
+  "globs": [
+    "packages/db/migrations/**/*.sql",
+    "packages/db/**/policies/**/*.sql",
+    "apps/web/db/migrations/**/*.sql",
+    "apps/*/db/migrations/**/*.sql"
+  ],
+  "note": "Fixed evidence manifest — what the RLS check audits is not model discretion (WORKING_METHOD §1). Globs verified against the real /studio repo layout."
+}

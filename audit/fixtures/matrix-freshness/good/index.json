@@ -1,0 +1,37 @@
+{
+  "id": "attack-stix-data-fixture-good",
+  "name": "MITRE ATT&CK STIX Data index (FIXTURE: good / current)",
+  "description": "Local fixture shaped like https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master/index.json. Enterprise ATT&CK max version == the pinned 19.1, so the freshness check must return current/pass. A DECOY 'Mobile ATT&CK' collection with a HIGHER number (20.0) is listed FIRST to prove the comparator selects Enterprise — not collections[0], not the global max.",
+  "collections": [
+    {
+      "id": "x-mitre-collection--decoy-mobile",
+      "name": "Mobile ATT&CK",
+      "description": "DECOY: higher-numbered non-Enterprise collection, listed first. A comparator that took collections[0] or the global max would wrongly read this and flag stale.",
+      "created": "2018-01-17T00:00:00.000Z",
+      "versions": [
+        { "version": "19.0", "url": "mobile-attack/mobile-attack-19.0.json", "modified": "2026-04-01T00:00:00.000Z" },
+        { "version": "20.0", "url": "mobile-attack/mobile-attack-20.0.json", "modified": "2026-06-01T00:00:00.000Z" }
+      ]
+    },
+    {
+      "id": "x-mitre-collection--enterprise",
+      "name": "Enterprise ATT&CK",
+      "description": "The collection the check must select. Max of versions[] is 19.1 (note 19.1 is NOT last in the array, defeating a take-last shortcut).",
+      "created": "2018-01-17T00:00:00.000Z",
+      "versions": [
+        { "version": "18.1", "url": "enterprise-attack/enterprise-attack-18.1.json", "modified": "2025-10-01T00:00:00.000Z" },
+        { "version": "19.1", "url": "enterprise-attack/enterprise-attack-19.1.json", "modified": "2026-05-01T00:00:00.000Z" },
+        { "version": "19.0", "url": "enterprise-attack/enterprise-attack-19.0.json", "modified": "2026-03-01T00:00:00.000Z" }
+      ]
+    },
+    {
+      "id": "x-mitre-collection--ics",
+      "name": "ICS ATT&CK",
+      "description": "DECOY: another non-Enterprise collection.",
+      "created": "2020-10-23T00:00:00.000Z",
+      "versions": [
+        { "version": "17.0", "url": "ics-attack/ics-attack-17.0.json", "modified": "2026-02-01T00:00:00.000Z" }
+      ]
+    }
+  ]
+}

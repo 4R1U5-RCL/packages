@@ -1,0 +1,15 @@
+{
+  "control": "matrix-freshness",
+  "surface": "infra",
+  "defends": "ATT&CK mapping currency: the version pinned in mapping/ATTACK_VERSION still matches MITRE's CURRENT published Enterprise release, so the technique IDs every other check cites out of mapping/controls.json have not silently rotted (threat-intelligence currency, A.5.7 / A.8.8 / CC7.1).",
+  "pin_source": "mapping/ATTACK_VERSION",
+  "poll_source": "https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master/index.json",
+  "extraction": "Parse the source JSON. Select the collections[] entry whose name == \"Enterprise ATT&CK\" (NOT collections[0], NOT the global max), then take the entry in its versions[] with the greatest version compared as numeric major.minor. Compare that published version against mapping/ATTACK_VERSION.version.",
+  "statuses": {
+    "pass": "confirmed current — published Enterprise == pinned",
+    "fail": "confirmed stale — published Enterprise > pinned (names the version gap)",
+    "unknown": "couldn't verify — network error, parse miss, shape miss, source unreachable, or pin ahead of published. NEVER a silent pass."
+  },
+  "not_a_gate": "A stale result is a MAINTENANCE finding (review the changed technique IDs, re-map mapping/controls.json, bump mapping/ATTACK_VERSION) — it gates the audit's own currency, NOT a client build/deploy.",
+  "note": "Fixed evidence manifest — the pin and poll source are authoritative in mapping/ATTACK_VERSION (single source of truth; the check reads them there, not from this manifest). attack:[] in mapping/controls.json is intentional: this is a meta/governance control, mapped to ISO/SOC currency controls only, with no adversary technique of its own. Fixtures carry a higher-numbered DECOY non-Enterprise collection to prove Enterprise selection over collections[0]/global-max."
+}

@@ -1,0 +1,11 @@
+{
+  "tessera-project.dev": [
+    "v=spf1 include:_spf.resend.com ~all"
+  ],
+  "resend._domainkey.tessera-project.dev": [
+    "v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvz8fQ2Jh4kIGoodFixtureKeyMaterialAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQIDAQAB"
+  ],
+  "_dmarc.tessera-project.dev": [
+    "v=DMARC1; p=quarantine; rua=mailto:dmarc@tessera-project.dev; fo=1"
+  ]
+}

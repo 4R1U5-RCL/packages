@@ -1,0 +1,8 @@
+{
+  "tessera-project.dev": [
+    "include:_spf.resend.com ~all"
+  ],
+  "resend._domainkey.tessera-project.dev": [
+    "v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvz8fQ2Jh4kIGoodFixtureKeyMaterialAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQIDAQAB"
+  ]
+}

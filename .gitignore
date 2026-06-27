@@ -1,0 +1,15 @@
+# Reusable-packages monorepo — never commit secret material.
+# (This package AUDITS for committed secrets; it must not become the leak.)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.DS_Store
+__pycache__/
+*.pyc
+node_modules/
+
+# Audit runtime artifacts — reports are generated, not versioned.
+audit/**/*.report.json
+audit/.runtime/

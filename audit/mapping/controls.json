@@ -1,0 +1,117 @@
+{
+  "rls": {
+    "title": "Row-Level Security on all app-data tables",
+    "surface": "repo",
+    "attack": [
+      {"id": "T1213", "name": "Data from Information Repositories", "tactic": "Collection"},
+      {"id": "T1190", "name": "Exploit Public-Facing Application", "tactic": "Initial Access"}
+    ],
+    "iso27001_2022": [
+      {"control": "A.8.3", "name": "Information access restriction"},
+      {"control": "A.5.15", "name": "Access control"}
+    ],
+    "soc2_cc": [
+      {"id": "CC6.1", "name": "Logical access security software, infrastructure, and architectures over protected information assets"},
+      {"id": "CC6.3", "name": "Authorize, modify, or remove access based on roles (least privilege / segregation of duties)"}
+    ],
+    "rationale": "RLS bounds what a role (e.g. anon) can read out of the database via the public/PostgREST API, mitigating bulk read of another tenant's rows from the data store (T1213) reachable through the exposed app surface (T1190); it is the technical access-restriction control A.8.3 / CC6.1."
+  },
+  "revoke": {
+    "title": "REVOKE discipline on PII tables (default grants stripped from anon/public)",
+    "surface": "repo",
+    "attack": [
+      {"id": "T1078", "name": "Valid Accounts", "tactic": "Initial Access, Persistence, Privilege Escalation, Stealth"},
+      {"id": "T1213", "name": "Data from Information Repositories", "tactic": "Collection"}
+    ],
+    "iso27001_2022": [
+      {"control": "A.8.3", "name": "Information access restriction"},
+      {"control": "A.5.18", "name": "Access rights"}
+    ],
+    "soc2_cc": [
+      {"id": "CC6.3", "name": "Authorize, modify, or remove access based on roles (least privilege / segregation of duties)"},
+      {"id": "CC6.1", "name": "Logical access security software, infrastructure, and architectures over protected information assets"}
+    ],
+    "rationale": "Stripping default grants from anon/public before any explicit grant removes the over-permissioned built-in role an attacker would otherwise ride (T1078) to read PII out of the repository (T1213); this is least-privilege provisioning, A.8.3/A.5.18 and CC6.3."
+  },
+  "ssrf": {
+    "title": "SSRF protection on the scraping path (block internal/link-local egress)",
+    "surface": "infra",
+    "attack": [
+      {"id": "T1552.005", "name": "Unsecured Credentials: Cloud Instance Metadata API", "tactic": "Credential Access"},
+      {"id": "T1190", "name": "Exploit Public-Facing Application", "tactic": "Initial Access"}
+    ],
+    "iso27001_2022": [
+      {"control": "A.8.26", "name": "Application security requirements"},
+      {"control": "A.8.20", "name": "Networks security"}
+    ],
+    "soc2_cc": [
+      {"id": "CC6.6", "name": "Logical access security measures against threats from outside the system boundaries"},
+      {"id": "CC6.1", "name": "Logical access security software, infrastructure, and architectures over protected information assets"}
+    ],
+    "rationale": "Blocking server-side requests to localhost/link-local addresses (169.254.169.254) on the Firecrawl path denies the classic SSRF-to-cloud-metadata credential theft (T1552.005) and the broader exploit of the fetch endpoint (T1190); it is a boundary/egress control, A.8.26/A.8.20 and CC6.6."
+  },
+  "webhook-auth": {
+    "title": "Inbound webhook authentication (HMAC-SHA256 + replay window)",
+    "surface": "infra",
+    "attack": [
+      {"id": "T1565.002", "name": "Data Manipulation: Transmitted Data Manipulation", "tactic": "Impact"},
+      {"id": "T1684.001", "name": "Social Engineering: Impersonation", "tactic": "Stealth"}
+    ],
+    "iso27001_2022": [
+      {"control": "A.8.24", "name": "Use of cryptography"},
+      {"control": "A.8.26", "name": "Application security requirements"}
+    ],
+    "soc2_cc": [
+      {"id": "CC6.7", "name": "Restrict and protect the transmission and movement of information to authorized processes"},
+      {"id": "CC6.1", "name": "Logical access security software, infrastructure, and architectures over protected information assets"}
+    ],
+    "rationale": "Verifying an HMAC-SHA256 signature with a replay window rejects forged/replayed payloads, defeating injection of tampered data in transit (T1565.002) by an actor impersonating the trusted sender (T1684.001); the cryptographic verification of an inbound transfer is A.8.24/A.8.26 and CC6.7."
+  },
+  "dns-auth": {
+    "title": "Email domain authentication (SPF / DKIM / DMARC)",
+    "surface": "infra",
+    "attack": [
+      {"id": "T1684.002", "name": "Social Engineering: Email Spoofing", "tactic": "Stealth"},
+      {"id": "T1566", "name": "Phishing", "tactic": "Initial Access"}
+    ],
+    "iso27001_2022": [
+      {"control": "A.5.14", "name": "Information transfer"},
+      {"control": "A.8.24", "name": "Use of cryptography"}
+    ],
+    "soc2_cc": [
+      {"id": "CC6.7", "name": "Restrict and protect the transmission and movement of information to authorized processes"},
+      {"id": "CC6.1", "name": "Logical access security software, infrastructure, and architectures over protected information assets"}
+    ],
+    "rationale": "Well-formed SPF/DKIM/DMARC records on the sending domain prevent an adversary spoofing that domain (T1684.002, whose description explicitly cites SPF/DKIM/DMARC) to launch phishing (T1566); DKIM signing and authenticated transfer map to A.5.14/A.8.24 and CC6.7."
+  },
+  "secret-leak": {
+    "title": "No secrets committed to the repository",
+    "surface": "repo",
+    "attack": [
+      {"id": "T1552.001", "name": "Unsecured Credentials: Credentials In Files", "tactic": "Credential Access"}
+    ],
+    "iso27001_2022": [
+      {"control": "A.5.17", "name": "Authentication information"},
+      {"control": "A.8.4", "name": "Access to source code"}
+    ],
+    "soc2_cc": [
+      {"id": "CC6.1", "name": "Logical access security software, infrastructure, and architectures over protected information assets"},
+      {"id": "CC6.3", "name": "Authorize, modify, or remove access based on roles (least privilege / segregation of duties)"}
+    ],
+    "rationale": "Keeping API keys and JWTs out of tracked files (.env gitignored) denies the exact credential-in-files theft of T1552.001; protecting this authentication information in the source tree is A.5.17/A.8.4 and the credential-management focus of CC6.1."
+  },
+  "matrix-freshness": {
+    "title": "Bundled ATT&CK version matches MITRE's current Enterprise release",
+    "surface": "infra",
+    "attack": [],
+    "iso27001_2022": [
+      {"control": "A.5.7", "name": "Threat intelligence"},
+      {"control": "A.8.8", "name": "Management of technical vulnerabilities"}
+    ],
+    "soc2_cc": [
+      {"id": "CC7.1", "name": "Detection/monitoring to identify new vulnerabilities and configuration changes"},
+      {"id": "CC3.2", "name": "Identify and analyze risks to the achievement of objectives"}
+    ],
+    "rationale": "This is a meta/currency control, not an adversary behaviour, so attack is intentionally empty; keeping the bundled ATT&CK matrix in step with MITRE's published release is threat-intelligence currency (A.5.7) and the detection of newly-published technique coverage (CC7.1)."
+  }
+}

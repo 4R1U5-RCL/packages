@@ -1,0 +1,50 @@
+# audit-gate.yml — LAYER 2b: the CI gate (repo subset, at deploy).
+#
+# Drop this into a CLIENT repo's .github/workflows/. It runs the audit package's
+# REPO-surface checks against the checked-out repo and BLOCKS the build on a
+# finding. It does NOT cover infra controls — CI's sandbox cannot safely hold the
+# credentials to probe live n8n / Firecrawl / Resend. Infra is covered by the
+# scheduled runner (Layer 2c); a full cross-surface audit is the agent run
+# (Layer 2a). See ci/README.md for that honest split.
+#
+# The package is CONSUMED BY PULLING A PINNED VERSION (never copy-forked):
+# checkout 4R1U5-RCL/packages at a pinned ref, then run audit/run.mjs in place.
+
+name: audit-gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Pin this to a released tag of 4R1U5-RCL/packages and bump it deliberately.
+env:
+  AUDIT_PKG_REF: v0.1.0
+
+jobs:
+  repo-controls:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repo under audit
+        uses: actions/checkout@v4
+        with:
+          path: target
+
+      - name: Pull the pinned audit package
+        uses: actions/checkout@v4
+        with:
+          repository: 4R1U5-RCL/packages
+          ref: ${{ env.AUDIT_PKG_REF }}
+          path: audit-pkg
+          # token: ${{ secrets.PACKAGES_READ_TOKEN }}   # if the repo is private
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Run repo-surface controls (blocks on a finding)
+        # run.mjs exit codes: 0 all pass · 1 a finding (fail) · 2 unverifiable.
+        # The gate blocks on BOTH a finding and an unverifiable result — a control
+        # CI cannot verify must not pass silently through the gate.
+        run: node audit-pkg/audit/run.mjs --surface repo --target target

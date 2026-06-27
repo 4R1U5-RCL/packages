@@ -1,0 +1,13 @@
+{
+  "control": "dns-auth",
+  "surface": "infra",
+  "defends": "Email domain authentication: the sending domain publishes well-formed SPF, DKIM and DMARC so it cannot be spoofed for phishing (baseline: information transfer, A.5.14 / A.8.24).",
+  "sending_domain": "tessera-project.dev",
+  "dkim_selectors": ["resend", "resend2"],
+  "context": {
+    "provider": "Resend",
+    "verified": "TE-15 verified DKIM/SPF/MX live on tessera-project.dev (Resend onboarding).",
+    "dns_caveat": "The container's resolver is NOT the public internet. A live `--domain tessera-project.dev` run may return status=unknown in-container even though the records exist publicly (DNS resolution failure must be unknown, never a silent fail). Use `--resolver-fixture` for deterministic offline verification; the SAME parser runs on fixture and live data."
+  },
+  "note": "Fixed evidence manifest — sending domain and DKIM selectors are not model discretion (WORKING_METHOD §1). dkim_selectors is the set of selectors tried; a pass needs ANY ONE to resolve to a valid DKIM record."
+}

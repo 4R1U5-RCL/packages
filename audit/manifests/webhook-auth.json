@@ -1,0 +1,20 @@
+{
+  "control": "webhook-auth",
+  "surface": "infra",
+  "defends": "Inbound webhooks must authenticate the sender: verify an HMAC-SHA256 signature over the raw request body (constant-time compare) and reject anything unsigned, wrong-signed, or replayed (baseline §8 — the integrations boundary calls n8n via hooks; those hooks must prove who is calling).",
+  "signature_header": "x-n8n-signature",
+  "timestamp_header": "x-n8n-timestamp",
+  "algorithm": "hmac-sha256",
+  "replay_window_seconds": 300,
+  "fake_test_secret": "test-secret-not-real",
+  "live_targets": {
+    "instance": "shared csco n8n.cloud production instance",
+    "signature_scheme": "n8n inbound webhooks sign with the `x-n8n-signature` header — HMAC-SHA256 of the raw body under a shared secret.",
+    "finding_ref": "TE-16",
+    "unsigned_routes": [
+      {"route": "verdict", "status": "inbound route was UNSIGNED — needs HMAC + replay window"},
+      {"route": "email-report", "status": "inbound route was UNSIGNED — needs HMAC + replay window"}
+    ]
+  },
+  "note": "Fixed evidence manifest — what the webhook-auth check probes and how it judges is not model discretion (WORKING_METHOD §1). The check is an ACTIVE probe: it signs a payload with --secret and the configured header, confirms a correctly-signed payload is ACCEPTED, then injects an unsigned and a wrong-signature payload and confirms BOTH are REJECTED. fake_test_secret is used ONLY by the bundled mock receivers (fixtures/webhook-auth/server.mjs); the real --secret for a live n8n route is never stored here. Live n8n routes (verdict, email-report) are NOT reached from this offline self-guard — see TE-16; they must be probed against the running instance with the real shared secret."
+}

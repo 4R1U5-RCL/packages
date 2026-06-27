@@ -1,0 +1,15 @@
+# This package audits for committed secrets — it must never become the leak.
+# A local .gitignore so the package is self-consistent even when pulled alone.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Generated audit reports and runtime artifacts — not versioned.
+*.report.json
+.runtime/
+
+# Filled-in scheduled config may reference secret env-var names; keep the
+# example tracked, the real one out.
+scheduled/infra.config.json

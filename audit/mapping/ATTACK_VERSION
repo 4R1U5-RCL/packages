@@ -1,0 +1,7 @@
+{
+  "version": "19.1",
+  "domain": "enterprise-attack",
+  "source": "https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master/index.json",
+  "retrieved": "as-of build (2026-06-27); freshness check confirms live",
+  "notes": "index.json is the official STIX 2.1 release feed for ATT&CK (mitre-attack/attack-stix-data). Shape: top-level object with a `collections` array (Enterprise/Mobile/ICS). To find the current Enterprise version, select the collection whose `name` == \"Enterprise ATT&CK\", then take the entry in its `versions[]` array with the greatest `version` (compare as numeric major.minor, or newest `modified` timestamp). jq: `.collections[] | select(.name==\"Enterprise ATT&CK\") | .versions | max_by(.version|split(\".\")|map(tonumber)) | .version`. Each version object has `version` (e.g. \"19.1\"), `url` (per-version STIX bundle, e.g. enterprise-attack/enterprise-attack-19.1.json), and `modified` (ISO-8601). Do NOT hardcode collections[0] — array order is not guaranteed. Cross-checked against attack.mitre.org/resources/versions/ (lists v19.1 as Current). Git tags also exist in the form `v19.1` but index.json is preferred for polling (structured JSON + modified dates vs HTML)."
+}

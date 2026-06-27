@@ -1,0 +1,6 @@
+# TEST FIXTURE — bad repo root. .gitignore itself is fine (ignores .env);
+# the injected violation is a FAKE secret hardcoded in a TRACKED source file
+# (leaked-config.ts), which is what the secret scan must catch.
+.env
+.env.*
+node_modules/

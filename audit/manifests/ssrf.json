@@ -1,0 +1,15 @@
+{
+  "control": "ssrf",
+  "surface": "infra",
+  "defends": "SSRF protection on the scraping path: the scraper must refuse to fetch internal/loopback/link-local targets (block egress to 127.0.0.0/8, ::1, localhost, 10/8, 172.16/12, 192.168/16, 169.254/16 incl. the 169.254.169.254 cloud metadata IP, and 0.0.0.0).",
+  "live_target": {
+    "scrape_path": "Firecrawl, reached via n8n. The competitor-pricing scrapers and Firecrawl fetches run server-side on the hosted infrastructure (packages/integrations is display-view/webhook hooks only — the scraping pipeline never enters the client repo, baseline §8). The SSRF-relevant fetch therefore lives on the Firecrawl/n8n side, not in a repo file.",
+    "probe": "POST / with JSON {url} to the live scrape/proxy endpoint. The check sends a benign external target first (http://example.com/) to confirm the endpoint is alive, then injects internal targets (http://127.0.0.1/, http://169.254.169.254/, http://localhost/, http://10.0.0.1/). All blocked -> pass; any fetched -> fail.",
+    "endpoint_url": null,
+    "endpoint_note": "No live Firecrawl/n8n scrape endpoint URL is wired in here. Supply it with --target <baseUrl> for a live run."
+  },
+  "egress_config_found": false,
+  "egress_config_note": "During repo probing, NO explicit SSRF/egress allow-list or internal-IP block configuration was found in the repo for the Firecrawl-via-n8n scrape path. Because that path is hosted (not in the client repo, baseline §8), its SSRF posture cannot be settled from repo contents alone. A LIVE run may therefore legitimately return `unknown` until the actual scrape endpoint is reachable and probed with the right request — `unknown` here means 'not yet verified', never a silent pass.",
+  "self_guard": "Proven offline against bundled mock endpoints in fixtures/ssrf/ (good = blocks internal -> pass; bad = no guard -> fail). The negative control is the bad mock: an internal target is injected and the detector must fire (verdict fail). The same classifyEndpoint() path used on a live --target is exercised on the mocks first; a pass on a live target is only emitted once that negative control has fired (enforced structurally by _common.mjs).",
+  "note": "Fixed evidence/probe manifest — what the SSRF check probes and how it judges is not model discretion (WORKING_METHOD §1). surface=infra: the control lives at the network/egress boundary of the hosted scrape path, not in a repo file."
+}
