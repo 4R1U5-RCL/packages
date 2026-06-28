@@ -102,20 +102,30 @@ if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
   throw new Error('studio-notify: bad signature — rejected, no delivery');
 }
 
-// Format the Telegram text. Callers usually pre-format \`message\`; audit events
-// (audit.alert.v1) are formatted here from the structured event if needed.
-let message = body.message || '';
+// Compose the Telegram text: TITLE + SUMMARY + FOOTER (the n8n-owned footer, so
+// every caller gets a consistent one). Callers send the parts; audit events
+// (audit.alert.v1) are formatted from the structured event if needed.
 const ev = body.event;
-if (!message && ev && ev.schema === 'audit.alert.v1') {
+let title = body.message || '';
+let summary = body.summary || '';
+if (ev && ev.schema === 'audit.alert.v1') {
   const sev = (ev.severity || 'info').toUpperCase();
-  message = '🔴 Audit [' + sev + '] ' + (ev.control ? ev.control + ': ' : '') +
-            (ev.title || 'alert') + (ev.detail ? '\\n' + ev.detail : '');
-} else if (ev && ev.schema === 'audit.alert.v1') {
-  const sev = (ev.severity || 'info').toUpperCase();
-  message = '🔴 Audit [' + sev + '] ' + message;
+  if (!title) title = '🔴 Audit [' + sev + '] ' + (ev.control ? ev.control + ': ' : '') + (ev.title || 'alert');
+  if (!summary && ev.detail) summary = ev.detail;
 }
-if (!message) message = '(studio-notify: empty message)';
-return [{ json: { message } }];
+if (!title) title = '(studio-notify)';
+
+const m = body.meta || {};
+const bits = ['[STUDIO_NOTIFICATION]'];
+if (m.session) bits.push(m.session);
+if (m.cwd) bits.push(m.cwd);
+bits.push(m.at || new Date().toISOString().slice(11, 16));
+const footer = '— ' + bits.join(' · ');
+
+let out = title;
+if (summary) out += '\\n\\n' + summary;
+out += '\\n\\n' + footer;
+return [{ json: { message: out } }];
 `.trim();
 }
 
@@ -232,7 +242,7 @@ async function main() {
 
   const url = `${N8N_BASE_URL}/webhook/${WEBHOOK_PATH}`;
   process.stdout.write(
-    `\n✓ [STUDIO-NOTIFICATION] workflow ${wfId} provisioned + activated.\n\n` +
+    `\n✓ [STUDIO_NOTIFICATION] workflow ${wfId} provisioned + activated.\n\n` +
     `Add these to ~/.claude/notify.env (chmod 600) and to /studio/.env:\n` +
     `  NOTIFY_WEBHOOK_URL=${url}\n` +
     `  NOTIFY_TOKEN=${SECRET}\n\n` +

@@ -26,6 +26,12 @@ import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, basename } from "node:path";
 import { notify } from "../src/client.mjs";
+import { bodyFromTranscript } from "../src/extract.mjs";
+
+function hhmm() {
+  const d = new Date();
+  return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+}
 
 // ── tiny KEY=VALUE loader for ~/.claude/notify.env (no deps) ──────────────────
 function loadEnvFile(path) {
@@ -93,21 +99,29 @@ async function main() {
     process.exit(0);
   }
 
-  // The notification text Claude Code passes. The exact field name is not firmly
-  // documented, so accept the likely carriers and degrade gracefully.
-  const text =
-    payload.message ?? payload.notification ?? payload.body ??
-    (kind === "complete" ? "Claude Code finished responding." : "Claude Code needs your input.");
-
   const where = payload.cwd ? basename(payload.cwd) : "session";
-  const message =
-    (kind === "complete" ? `🟢 Claude Code done — ${where}\n` : `🟡 Claude Code needs input — ${where}\n`) +
-    String(text);
+  const title = kind === "complete" ? `🟢 Claude Code done — ${where}` : `🟡 Claude Code needs input — ${where}`;
 
-  const res = await notify(
-    { source: "claude-code", kind, message, meta: { cwd: payload.cwd, session_id: payload.session_id } },
-    { url, token, secret },
-  );
+  // FREE local summary from the transcript (no LLM, no cost, never leaves the box).
+  // Degrades to whatever prompt text the hook carried if the transcript is absent.
+  let summary = "";
+  if (cfgValue("NOTIFY_SUMMARY", fileEnv) !== "0") {
+    const maxChars = Number(cfgValue("NOTIFY_SUMMARY_MAXCHARS", fileEnv)) || 2500;
+    try { if (payload.transcript_path) summary = bodyFromTranscript(payload.transcript_path, { maxChars }); } catch { /* degrade */ }
+  }
+  if (!summary) {
+    summary = String(payload.message ?? payload.notification ?? payload.body ??
+      (kind === "complete" ? "Finished responding." : "Waiting on you."));
+  }
+
+  const meta = {
+    cwd: payload.cwd ?? null,
+    session: payload.session_id ? String(payload.session_id).slice(0, 8) : null,
+    at: hhmm(),
+  };
+
+  // n8n composes: title + summary + footer(meta). bin sends the parts.
+  const res = await notify({ source: "claude-code", kind, message: title, summary, meta }, { url, token, secret });
 
   process.stderr.write(
     `[studio-notify] ${res.delivered ? "delivered ✓" : "NOT delivered ✗"} ` +

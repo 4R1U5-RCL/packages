@@ -51,7 +51,8 @@ export function buildRequest(ev, cfg) {
     schema: NOTIFY_SCHEMA,
     source: ev.source,                 // 'claude-code' | 'audit' | ...
     kind: ev.kind ?? null,             // 'attention' | 'complete' | 'alert'
-    message: ev.message ?? "",
+    message: ev.message ?? "",         // the title line
+    summary: ev.summary ?? null,       // free local body (n8n composes title+summary+footer)
     event: ev.event ?? null,           // optional structured event (e.g. audit.alert.v1)
     meta: ev.meta ?? {},
     sentAt: new Date(ev.ts).toISOString(),

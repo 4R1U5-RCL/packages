@@ -7,7 +7,11 @@
 // "ran without error"). Run: node scripts/selftest.mjs
 
 import assert from "node:assert/strict";
+import { writeFileSync, unlinkSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { buildRequest, notify, sign, NOTIFY_SCHEMA, TOKEN_HEADER, SIG_HEADER, TS_HEADER } from "../src/client.mjs";
+import { selectBody, lastAssistantText } from "../src/extract.mjs";
 
 let n = 0;
 const ok = (name) => { n++; process.stdout.write(`  ✓ ${name}\n`); };
@@ -52,6 +56,55 @@ const ok = (name) => { n++; process.stdout.write(`  ✓ ${name}\n`); };
   assert.equal(res.ok, false);
   assert.match(res.note, /NOT WIRED/);
   ok("notify() fail-soft + loud when not wired");
+}
+
+// 5. selectBody(): drops code/markup, keeps headings/bullets, guarantees the
+//    trailing question, and respects the char budget.
+{
+  const md = [
+    "## What I did",
+    "Wired the **notifier** into `both` repos.",
+    "",
+    "```js",
+    "const secret = 'do-not-leak';",
+    "```",
+    "- Pushed to `feat/notify`",
+    "- Verified the [earned-pass](https://x.y)",
+    "",
+    "Want me to proceed?",
+  ].join("\n");
+  const body = selectBody(md, { maxChars: 2500 });
+  assert.match(body, /Want me to proceed\?$/);      // trailing question kept, last
+  assert.doesNotMatch(body, /do-not-leak|const secret/); // fenced code dropped
+  assert.doesNotMatch(body, /\*\*|`|\]\(/);          // markup stripped
+  assert.match(body, /• Pushed to feat\/notify/);    // list item kept + bulleted
+  assert.match(body, /earned-pass/);                 // link text kept, url gone
+  assert.doesNotMatch(body, /https:\/\//);
+  ok("selectBody() keeps structure, drops code/markup, guarantees the question");
+
+  // budget truncation adds an ellipsis and still ends on the question
+  const long = Array.from({ length: 50 }, (_, i) => `- point number ${i} with some filler text`).join("\n") + "\nFinal ask?";
+  const trimmed = selectBody(long, { maxChars: 200 });
+  assert.ok(trimmed.length <= 220);
+  assert.match(trimmed, /Final ask\?$/);
+  ok("selectBody() budgets by chars and preserves the trailing question");
+}
+
+// 6. lastAssistantText(): pulls the last assistant entry that has text (skips
+//    trailing tool_use-only entries).
+{
+  const p = join(tmpdir(), `notify-selftest-${process.pid}.jsonl`);
+  const lines = [
+    JSON.stringify({ type: "user", message: { role: "user", content: [{ type: "text", text: "do it" }] } }),
+    JSON.stringify({ type: "assistant", message: { role: "assistant", content: [{ type: "text", text: "Here is the answer." }] } }),
+    JSON.stringify({ type: "assistant", message: { role: "assistant", content: [{ type: "tool_use", name: "Bash", input: {} }] } }),
+  ].join("\n");
+  writeFileSync(p, lines);
+  try {
+    assert.equal(lastAssistantText(p), "Here is the answer.");
+    assert.equal(lastAssistantText("/no/such/file.jsonl"), ""); // unreadable → degrade
+    ok("lastAssistantText() finds last text entry, degrades on missing file");
+  } finally { try { unlinkSync(p); } catch {} }
 }
 
 process.stdout.write(`\nselftest: ${n} checks passed\n`);
