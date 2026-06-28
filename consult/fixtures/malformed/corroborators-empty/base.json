@@ -1,0 +1,8 @@
+{
+  "_fixture": "OBVIOUSLY-FAKE. The base tier answered fine here...",
+  "model": "claude-opus-4-8",
+  "choices": [
+    { "message": { "role": "assistant",
+      "content": "A plausible single-model answer to the question.\nSTANCE: concur" } }
+  ]
+}

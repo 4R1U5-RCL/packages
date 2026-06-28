@@ -1,0 +1,21 @@
+# This package WRITES backup archives — the real ones must never be versioned
+# (they are large, host-specific, and a copy belongs off-system, not in git).
+# A local .gitignore so the package is self-consistent even when pulled alone.
+*.tar.gz
+*.tar.gz.sha256
+*.manifest.txt
+backup_*
+
+# Secrets discipline: hygiene reads no credentials, but keep the tree clean.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Generated reports and runtime artifacts — not versioned.
+*.report.json
+.runtime/
+
+# Filled-in scheduled config (the example stays tracked, the real one out).
+scheduled/hygiene.config.json

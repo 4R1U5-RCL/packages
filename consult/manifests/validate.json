@@ -1,0 +1,21 @@
+{
+  "flow": "validate",
+  "purpose": "Cross-validate a plan/proposal: base summary -> validator finds risks -> ESCALATE to revalidator on >=3 substantive risks or uncertainty.",
+  "tiers": [
+    { "role": "base",        "model": "claude-opus-4-8",  "purpose": "neutral summary + strengths" },
+    { "role": "validator",   "model": "gpt-5",            "purpose": "find substantive risks" },
+    { "role": "revalidator", "model": "gemini-2.5-pro",   "purpose": "re-assess (only when escalated)" }
+  ],
+  "factcheck": { "role": "factcheck", "model": "perplexity/sonar", "purpose": "optional web fact-check of external claims", "optional": true, "requires_consent": true },
+  "escalation": {
+    "risk_threshold": 3,
+    "escalate_on_uncertainty": true,
+    "escalate_to": "revalidator",
+    "rule": "If the validator raises >=3 substantive RISK lines OR sets UNCERTAIN, escalate to the revalidator. Fewer risks and no uncertainty MUST NOT escalate."
+  },
+  "confidence": {
+    "min_corroborating_responders_for_high": 1,
+    "rule": "Clean (no escalation, validator concurs) = HIGH; escalated = MEDIUM/LOW depending on the revalidator. Confidence is INTER-MODEL AGREEMENT, never a claim of correctness."
+  },
+  "note": "FIXED scope (WORKING_METHOD §1): the escalation threshold (>=3 risks) is declared here, not chosen per run. _chain.mjs reads it."
+}

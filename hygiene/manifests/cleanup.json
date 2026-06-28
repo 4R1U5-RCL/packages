@@ -1,0 +1,19 @@
+{
+  "control": "cleanup",
+  "surface": "local",
+  "defends": "The IOPHON ~/.claude §2 layout: each kind of file has exactly one canonical subdirectory. A file of a known kind sitting anywhere else is drift.",
+  "target_default": "~/.claude",
+  "exclude": [".git", "node_modules"],
+  "rules": [
+    { "id": "audit",     "globs": ["audit_*.md"],     "dest": "data/audits/",    "desc": "audit outputs" },
+    { "id": "handoff",   "globs": ["handoff_*.md"],   "dest": "data/handoffs/",  "desc": "handoff documents" },
+    { "id": "debrief",   "globs": ["debrief_*.md"],   "dest": "data/debriefs/",  "desc": "debrief reports" },
+    { "id": "validate",  "globs": ["validate_*.md"],  "dest": "data/validate/",  "desc": "validation runs" },
+    { "id": "research",  "globs": ["research_*.md"],  "dest": "data/research/",  "desc": "research outputs" },
+    { "id": "archive",   "globs": ["*.tar.gz", "backup_*"], "dest": "data/backups/", "desc": "archives / tarballs" },
+    { "id": "infra-doc", "globs": ["System-Architecture*", "Cyber-Security*", "Current-State*"], "dest": "data/documents/", "desc": "core infrastructure documents" },
+    { "id": "template",  "globs": ["*template*", "*.template"], "dest": "data/templates/", "desc": "reusable document templates" },
+    { "id": "skill",     "globs": ["*.md"], "dest": "commands/", "requires_frontmatter": true, "desc": "skill / slash-command files (only .md carrying skill frontmatter)" }
+  ],
+  "note": "FIXED scope (WORKING_METHOD §1). Rules are ordered specific -> generic: the first rule whose globs match the basename wins, so audit_*.md is classified as an audit, not swept by the generic *.md skill rule. The skill rule is the only one that also requires skill frontmatter, so an ordinary .md note is left alone rather than moved to commands/. Files matching NO rule are not drift — cleanup only moves kinds it has a canonical home for."
+}

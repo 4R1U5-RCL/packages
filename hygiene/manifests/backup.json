@@ -1,0 +1,12 @@
+{
+  "control": "backup",
+  "surface": "local",
+  "defends": "A recoverable point-in-time snapshot of the config tree: the archive is created AND verified (stable sha256, extractable, every in-scope file captured), never assumed.",
+  "target_default": "~/.claude",
+  "include_roots": ["."],
+  "exclude": [".git", "node_modules", "data/backups", "*.tar.gz", ".env", ".env.*"],
+  "output_dir": "data/backups/",
+  "archive_prefix": "backup_",
+  "sentinel_name": ".hygiene-backup-sentinel",
+  "note": "FIXED scope (WORKING_METHOD §1). include_roots '.' = archive the whole target. exclude is applied BOTH to the walk that builds the expected-entry set AND to tar, so the two agree on scope: prior archives (data/backups), .git, node_modules and secret files are kept out. The sentinel is injected ONLY into the temp staging copy during self-test — never into the real target. A live --apply run proves capture by asserting every walked in-scope file is present in the archive listing."
+}

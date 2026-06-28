@@ -1,0 +1,8 @@
+{
+  "_fixture": "OBVIOUSLY-FAKE recorded LiteLLM proxy body.",
+  "model": "claude-opus-4-8",
+  "choices": [
+    { "message": { "role": "assistant",
+      "content": "Plan: add a short-lived cache in front of the product-list endpoint.\nSTRENGTH: cuts read load on the database.\nSTANCE: concur" } }
+  ]
+}

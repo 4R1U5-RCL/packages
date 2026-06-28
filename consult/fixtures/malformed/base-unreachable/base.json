@@ -1,0 +1,5 @@
+{
+  "_fixture": "OBVIOUSLY-FAKE. Simulates the proxy being unreachable for the BASE tier. There is no answer to cross-validate => verdict MUST be unknown, never fabricated.",
+  "__unreachable": true,
+  "error": "connect ECONNREFUSED 127.0.0.1:4000"
+}

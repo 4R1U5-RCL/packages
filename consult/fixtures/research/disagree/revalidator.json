@@ -1,0 +1,8 @@
+{
+  "_fixture": "OBVIOUSLY-FAKE recorded LiteLLM proxy body.",
+  "model": "gemini-2.5-pro",
+  "choices": [
+    { "message": { "role": "assistant",
+      "content": "I concur with the validator's correction, not the base answer.\nPOSITION: The latest survey lists Mt. Beta as the tallest.\nSTANCE: dissent" } }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "_fixture": "OBVIOUSLY-FAKE recorded LiteLLM proxy body. No real secrets, no real content.",
+  "model": "claude-opus-4-8",
+  "choices": [
+    { "message": { "role": "assistant",
+      "content": "The capital of the fictional country Examplestan is Faketown, founded 1872. [src: fake-almanac]\nSTANCE: concur" } }
+  ]
+}

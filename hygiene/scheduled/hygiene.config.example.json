@@ -1,0 +1,4 @@
+{
+  "_comment": "Config for the scheduled hygiene runner. Copy to hygiene.config.json on the host that owns the real ~/.claude and set the target. No secrets live here — hygiene reads no credentials; it only needs a path. A leading ~ is expanded from the host home dir.",
+  "target": "~/.claude"
+}

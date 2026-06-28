@@ -1,0 +1,8 @@
+{
+  "_fixture": "OBVIOUSLY-FAKE recorded LiteLLM proxy body (Perplexity tier).",
+  "model": "perplexity/sonar",
+  "choices": [
+    { "message": { "role": "assistant",
+      "content": "Web sources corroborate the stated capital.\nSTANCE: concur" } }
+  ]
+}

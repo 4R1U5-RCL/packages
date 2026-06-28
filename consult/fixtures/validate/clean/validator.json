@@ -1,0 +1,8 @@
+{
+  "_fixture": "OBVIOUSLY-FAKE recorded LiteLLM proxy body. Only 1 minor risk, no uncertainty => MUST NOT escalate.",
+  "model": "gpt-5",
+  "choices": [
+    { "message": { "role": "assistant",
+      "content": "Reviewed the caching plan. It is sound with one minor caveat.\nRISK: cache invalidation on a price change must be wired so stale prices are not served.\nSTANCE: concur" } }
+  ]
+}

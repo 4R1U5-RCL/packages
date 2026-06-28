@@ -1,0 +1,55 @@
+# hygiene-gate.yml — the CI drift gate. READ ci/README.md FIRST: this is a
+# WEAKER FIT than audit's repo gate and only makes sense in one narrow case.
+#
+# It runs the `cleanup` control in CHECK mode (dry-run) against a checked-out tree
+# and blocks the build on drift. That is only meaningful when the config tree is
+# ITSELF a git-tracked repo (e.g. a dotfiles / ~/.claude-under-version-control
+# repo). The PRIMARY automation for hygiene is the SCHEDULED runner over a live
+# ~/.claude — see scheduled/. Do not wire this gate to a repo that is not the
+# config tree; it would have nothing in scope and report `unknown`.
+#
+# backup is intentionally ABSENT from this gate: a stateless CI runner is the
+# wrong place to write a preservation archive of a host's home tree (the tree
+# isn't even present in CI). Backups belong on the scheduled host.
+#
+# The package is CONSUMED BY PULLING A PINNED VERSION (never copy-forked):
+# checkout 4R1U5-RCL/packages at a pinned ref, then run hygiene/run.mjs in place.
+
+name: hygiene-gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Pin this to a released tag of 4R1U5-RCL/packages and bump it deliberately.
+env:
+  HYGIENE_PKG_REF: v0.1.0
+
+jobs:
+  drift-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the config tree under check
+        uses: actions/checkout@v4
+        with:
+          path: target
+
+      - name: Pull the pinned hygiene package
+        uses: actions/checkout@v4
+        with:
+          repository: 4R1U5-RCL/packages
+          ref: ${{ env.HYGIENE_PKG_REF }}
+          path: hygiene-pkg
+          # token: ${{ secrets.PACKAGES_READ_TOKEN }}   # if the repo is private
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Run the drift detector in CHECK mode (blocks on drift)
+        # run.mjs exit codes: 0 tidy · 1 drift (stray files) · 2 unverifiable.
+        # --only cleanup: never runs backup in CI. No --apply: CHECK mode only,
+        # the gate reports drift and blocks; it never moves files in CI.
+        run: node hygiene-pkg/hygiene/run.mjs --only cleanup --target target

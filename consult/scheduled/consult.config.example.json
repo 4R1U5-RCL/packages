@@ -1,0 +1,15 @@
+{
+  "_comment": "Standing research questions for the OPTIONAL research-digest timer. Copy to consult.config.json on the scheduled host. The LiteLLM proxy URL + key come from the host environment ($LITELLM_BASE_URL / $LITELLM_API_KEY) — NO secret sits in this file. 'factcheck:true' opts a question into the external-web Perplexity tier; leave it off unless an unattended web reach is intended.",
+  "questions": [
+    {
+      "question": "What materially changed in the LiteLLM proxy's supported model list this week?",
+      "factcheck": false,
+      "report": "/var/log/consult/litellm-models.md"
+    },
+    {
+      "question": "Are there new advisories affecting the studio's pinned Node 22 runtime?",
+      "factcheck": true,
+      "report": "/var/log/consult/node22-advisories.md"
+    }
+  ]
+}

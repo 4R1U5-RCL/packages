@@ -1,0 +1,17 @@
+# consult talks to a LiteLLM proxy with a key from the environment — it must
+# never become the place a secret leaks. A local .gitignore so the package is
+# self-consistent even when pulled alone.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Generated reports and runtime artifacts — not versioned.
+*.report.md
+*.report.json
+.runtime/
+
+# Filled-in scheduled config may reference secret env-var names; keep the
+# example tracked, the real one out.
+scheduled/consult.config.json

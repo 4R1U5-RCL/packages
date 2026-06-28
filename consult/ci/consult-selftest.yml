@@ -1,0 +1,55 @@
+# consult-selftest.yml — THE strong gate for consult.
+#
+# Runs the OFFLINE orchestration self-tests (run.mjs --self-test) and BLOCKS if
+# the chain logic regresses. This is the gate that fits consult: it needs NO
+# live models and NO secrets, because the invariants (escalation fires on >=3
+# risks and not otherwise; agreement scores HIGH and divergence scores LOW;
+# malformed/unreachable tiers => unknown, never fabricated) are all provable
+# against the bundled RECORDED fixtures.
+#
+# It deliberately does NOT make live model calls. A LiteLLM proxy in CI would mean
+# holding an API key in the sandbox and paying for non-deterministic output that
+# could not gate a build anyway — see ci/README.md for that honest split. Live
+# calls happen only when an operator (SKILL.md) or the optional scheduled job
+# points the chain at a real proxy.
+#
+# The package is CONSUMED BY PULLING A PINNED VERSION (never copy-forked):
+# checkout 4R1U5-RCL/packages at a pinned ref, then run consult/run.mjs in place.
+
+name: consult-selftest
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Pin this to a released tag of 4R1U5-RCL/packages and bump it deliberately.
+env:
+  CONSULT_PKG_REF: v0.1.0
+
+jobs:
+  orchestration-selftest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pull the pinned consult package
+        uses: actions/checkout@v4
+        with:
+          repository: 4R1U5-RCL/packages
+          ref: ${{ env.CONSULT_PKG_REF }}
+          path: consult-pkg
+          # token: ${{ secrets.PACKAGES_READ_TOKEN }}   # if the repo is private
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Run the offline orchestration self-tests (blocks on a regression)
+        # run.mjs --self-test exit codes: 0 all pass · 1 an invariant violated
+        # (fail) · 2 a self-guard could not be exercised (unknown). The gate
+        # blocks on BOTH 1 and 2 — an orchestration the gate cannot verify must
+        # not pass silently. No LITELLM_* secrets are set: this is offline.
+        run: node consult-pkg/consult/run.mjs --self-test
+
+      - name: Run the full regression backstop
+        run: node consult-pkg/consult/demo.mjs
