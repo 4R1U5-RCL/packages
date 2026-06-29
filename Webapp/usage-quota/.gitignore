@@ -1,0 +1,5 @@
+# Config is env-driven; this package holds NO secrets. Keep local env out anyway.
+*.env
+.env*
+*.local
+node_modules

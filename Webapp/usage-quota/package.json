@@ -1,0 +1,19 @@
+{
+  "name": "@webapp/usage-quota",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A reusable rolling-window usage limiter for a countable metered resource. Pure, dependency-free core (quota math + Pro/allow-list exemptions) with an INJECTED count source, plus an action-boundary enforcement seam that redirects to /billing?reason=quota. Supabase wiring is reference glue the client adapts.",
+  "exports": {
+    ".": "./src/quota.mjs",
+    "./quota": "./src/quota.mjs",
+    "./enforce": "./src/enforce.mjs"
+  },
+  "scripts": {
+    "selftest": "node selftest.mjs"
+  },
+  "files": [
+    "src",
+    "reference"
+  ]
+}
