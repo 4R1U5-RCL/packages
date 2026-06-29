@@ -1,0 +1,268 @@
+{
+  "name": "[TEMPLATE] Shopify Webhook → Re-read/Invalidate (never mirror)",
+  "nodes": [
+    {
+      "id": "shopify-webhook",
+      "name": "Shopify Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "shopify-webhook-reread",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "webhookId": "80d4a732-9c57-46f6-bcc9-3bf2ccaf8d8a"
+    },
+    {
+      "id": "verify-shopify-hmac",
+      "name": "Verify Shopify HMAC",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const crypto = require('crypto');\nconst SECRET = $env[\"SHOPIFY_WEBHOOK_SECRET\"];\nconst items = $input.all();\nfor (const it of items) {\n  const j = it.json;\n  const headers = j.headers || {};\n  const provided = headers['x-shopify-hmac-sha256'] || '';\n  // Sign the EXACT received bytes — rawBody when n8n captured it, else re-stringify.\n  const raw = (j.rawBody != null) ? j.rawBody.toString() : JSON.stringify(j.body);\n  const digest = crypto.createHmac('sha256', SECRET).update(raw, 'utf8').digest('base64');\n  let ok = false;\n  try {\n    const a = Buffer.from(digest), b = Buffer.from(String(provided));\n    ok = a.length === b.length && crypto.timingSafeEqual(a, b);\n  } catch (e) { ok = false; }\n  j.__authok = ok;\n}\nreturn items;"
+      }
+    },
+    {
+      "id": "auth-gate",
+      "name": "Auth Gate",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "auth-gate-cond",
+              "leftValue": "={{ $json.__authok }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "re-read-admin-api",
+      "name": "Re-read Admin API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        660,
+        -120
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.SHOPIFY_ADMIN_API_URL }}/orders/{{ $json.body.id }}.json",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        },
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth"
+      },
+      "alwaysOutputData": true,
+      "notes": "PAT-4 guard: body may be an empty HTTP 200 — never JSON.parse blind. Use: const t=(response.body??'').toString(); t.trim()?JSON.parse(t):[]"
+    },
+    {
+      "id": "invalidate-cache",
+      "name": "Invalidate Cache",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        880,
+        -120
+      ],
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/shopify_cache?resource_id=eq.{{ $json.body.id }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ stale: true, invalidated_at: new Date().toISOString() }) }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth"
+      },
+      "alwaysOutputData": true,
+      "notes": "PAT-4 guard: body may be an empty HTTP 200 — never JSON.parse blind. Use: const t=(response.body??'').toString(); t.trim()?JSON.parse(t):[]"
+    },
+    {
+      "id": "sign-response",
+      "name": "Sign Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        -120
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const crypto = require('crypto');\nconst SECRET = $env[\"N8N_WEBHOOK_SECRET\"];\nconst items = $input.all();\nfor (const it of items) {\n  const j = it.json;\n  const requestId = (j.body && j.body.request_id) || j.request_id || null;\n  const body = { ok: true, request_id: requestId };\n  const payload = JSON.stringify(body);\n  j.__body = body;\n  j.__ts = String(Date.now());\n  j.__sig = crypto.createHmac('sha256', SECRET).update(payload).digest('hex');\n}\nreturn items;"
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "respond-signed",
+      "name": "Respond Signed",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1320,
+        -120
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json.__body }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "x-n8n-signature",
+                "value": "={{ $json.__sig }}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "reject-401",
+      "name": "Reject 401",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        660,
+        160
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"ok\": false, \"error\": \"invalid Shopify HMAC\" } }}",
+        "options": {
+          "responseCode": 401
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Shopify Webhook": {
+      "main": [
+        [
+          {
+            "node": "Verify Shopify HMAC",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Shopify HMAC": {
+      "main": [
+        [
+          {
+            "node": "Auth Gate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Auth Gate": {
+      "main": [
+        [
+          {
+            "node": "Re-read Admin API",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reject 401",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Re-read Admin API": {
+      "main": [
+        [
+          {
+            "node": "Invalidate Cache",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Invalidate Cache": {
+      "main": [
+        [
+          {
+            "node": "Sign Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sign Response": {
+      "main": [
+        [
+          {
+            "node": "Respond Signed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false
+}
