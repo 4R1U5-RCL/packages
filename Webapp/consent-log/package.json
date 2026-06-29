@@ -1,0 +1,19 @@
+{
+  "name": "@studio/consent-log",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Server-enforced GDPR signup consent gate. A signup flow cannot create an account without a fresh, version-pinned acceptance of the Privacy Policy + Terms, and the acceptance is persisted in server-write-only columns (consent_accepted_at + consent_version) the user can never write or backdate. Reusable webapp template package — consumed by a pinned version; configured only by the CONSENT_VERSION constant; no secrets.",
+  "exports": {
+    ".": "./src/consent.mjs",
+    "./consent": "./src/consent.mjs"
+  },
+  "scripts": {
+    "selftest": "node selftest.mjs"
+  },
+  "files": [
+    "src",
+    "migrations",
+    "reference"
+  ]
+}
