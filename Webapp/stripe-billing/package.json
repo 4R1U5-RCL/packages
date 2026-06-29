@@ -1,0 +1,27 @@
+{
+  "name": "stripe-billing",
+  "version": "0.1.0",
+  "description": "Stripe subscription-lifecycle rail config: a dependency-free CORE (webhook-signature verification + idempotent event→absolute-state mapping + server-write-only billing migration), with reference Next.js/SDK glue. STATUS: NOT live-wired / untested against live Stripe — only the offline CORE is proven by selftest.",
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "exports": {
+    "./verify-webhook": "./src/verify-webhook.mjs",
+    "./apply-event": "./src/apply-event.mjs",
+    "./scan-migration": "./src/scan-migration.mjs",
+    "./config": "./src/config.mjs"
+  },
+  "scripts": {
+    "test": "node selftest.mjs",
+    "selftest": "node selftest.mjs"
+  },
+  "files": [
+    "src/",
+    "migrations/",
+    "reference/",
+    "selftest.mjs",
+    "README.md",
+    "CLAUDE.md"
+  ],
+  "license": "UNLICENSED",
+  "private": true
+}
