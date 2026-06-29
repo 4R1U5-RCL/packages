@@ -7,7 +7,7 @@ pulling a pinned version**, never copy-forked into a container.
 ## Layout
 
 - **[`Claude/`](Claude/)** — tooling for the Claude/agent side of the studio (the packages below).
-- **[`Webapp/`](Webapp/)** — reserved for web-app tooling (empty for now).
+- **[`Webapp/`](Webapp/)** — reusable web-app feature-packages extracted from Tessera (10 packages — see [`Webapp/README.md`](Webapp/README.md)).
 
 ## Packages (`Claude/`)
 
