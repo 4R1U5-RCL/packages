@@ -1,0 +1,6 @@
+# This package reads its writer (the service-role Supabase client) from the
+# host app's env — it holds no secrets of its own. Keep local env/build cruft out.
+*.local
+.env
+.env.*
+node_modules/

@@ -1,0 +1,19 @@
+{
+  "name": "@studio/activity-feed",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A structured per-user in-app audit trail: an activity_events table (RLS owner-read, server-only insert) written from server actions through a single logEvent() seam, plus a reference feed render. Tier-gated app data (Shopify does not own it). NEW SEAM / speculative extraction of Tessera's inline activity writes — see README.",
+  "exports": {
+    ".": "./src/log-event.mjs",
+    "./log-event": "./src/log-event.mjs"
+  },
+  "scripts": {
+    "selftest": "node selftest.mjs"
+  },
+  "files": [
+    "src",
+    "migrations",
+    "reference"
+  ]
+}
