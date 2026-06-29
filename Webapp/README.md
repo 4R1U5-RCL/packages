@@ -23,6 +23,7 @@ workflow graph, scrapers, schedulers, or structuring logic.
 | [`password-hygiene/`](password-hygiene/) | `checkPasswordStrength()` — rules + HaveIBeenPwned k-anonymity breach check (only the SHA-1 prefix leaves the box); fails open on outage. Zero config. |
 | [`consent-log/`](consent-log/) | Server-enforced GDPR signup consent gate + server-write-only `consent_accepted_at`/`consent_version` columns (a user can't alter their own consent record). |
 | [`activity-feed/`](activity-feed/) | Per-user in-app audit trail: one `logEvent()` seam + owner-read / server-insert `activity_events` table. *(New seam — a small refactor of Tessera's inline writes, not a lift-and-shift.)* |
+| [`stripe-billing/`](stripe-billing/) | Stripe subscription lifecycle: signed webhook → idempotent absolute-state mirror into `profiles` + checkout/portal helpers; billing columns server-write-only. **⚠️ NOT live-wired / untested** — offline core (signature verify + event→state mapping) is selftest-proven; checkout/portal/SDK paths are reference-only and unverified against live Stripe. |
 
 ## Conventions
 
