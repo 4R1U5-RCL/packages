@@ -1,0 +1,6 @@
+# local secrets — never commit. Caps + the service-role key are read from hosted
+# env / n8n credentials, never from anything in this package.
+*.local
+*.env
+.env
+node_modules/
