@@ -1,0 +1,5 @@
+# secrets never live in this package — only ever in env or the chmod-600 fallback
+inbound-email.env
+*.env
+.env*
+node_modules/

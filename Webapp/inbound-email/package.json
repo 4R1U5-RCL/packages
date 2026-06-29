@@ -1,0 +1,26 @@
+{
+  "name": "inbound-email",
+  "version": "0.1.0",
+  "description": "Signed Resend inbound-email webhook → verify → fetch → forward-to-mailbox. Dependency-free CORE, offline-testable.",
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "exports": {
+    "./verify": "./src/verify.mjs",
+    "./forward": "./src/forward.mjs",
+    "./resend": "./src/resend.mjs"
+  },
+  "scripts": {
+    "test": "node selftest.mjs",
+    "provision-dns": "node scripts/provision-dns.mjs"
+  },
+  "files": [
+    "src/",
+    "scripts/",
+    "route.reference.ts",
+    "selftest.mjs",
+    "README.md",
+    "CLAUDE.md"
+  ],
+  "license": "UNLICENSED",
+  "private": true
+}
