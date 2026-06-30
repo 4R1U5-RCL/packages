@@ -1,6 +1,8 @@
 ---
 name: deploy-vercel
 description: Deploy a client app to Vercel with an explicit project-ID, env/secret, and known-trap preflight checklist
+argument-hint: [<app/client>] [--prod] [--preview]
+allowed-tools: [Read, Bash, Grep]
 user-invocable: true
 ---
 

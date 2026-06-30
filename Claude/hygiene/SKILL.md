@@ -1,6 +1,8 @@
 ---
 name: config-hygiene
 description: Tend a tree via a profile — the IOPHON ~/.claude config tree (claude), a git codebase (codebase), or an LLM-artifact store (llm-artifacts). Take a self-verified backup (archive created AND checked: stable sha256, extractable, tree fully captured) and/or detect drift; under the claude profile drift can be moved into place (human-gated), under codebase/llm-artifacts it is report-only. Every verdict is self-guarded so a green is earned (backup's sentinel negative control fires; cleanup is watched to flag a bad input), never assumed. Use when asked to back up ~/.claude or a repo, verify a backup, check/tidy config-tree organisation, report codebase junk, or find misplaced transcripts. NOT for editing content, managing secrets (see the audit package), or backing up a deployed app/database.
+argument-hint: [--profile claude|codebase|llm-artifacts] [--target <path>] [--only backup|cleanup] [--apply]
+allowed-tools: [Read, Bash]
 user-invocable: true
 ---
 

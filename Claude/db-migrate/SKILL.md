@@ -1,6 +1,8 @@
 ---
 name: db-migrate
 description: Apply a Supabase migration via the Management API and verify the table/policy + RLS landed
+argument-hint: [<migration-file-or-sql>] [--project=<ref>]
+allowed-tools: [Read, Bash, Grep]
 user-invocable: true
 ---
 

@@ -1,6 +1,8 @@
 ---
 name: security-audit
 description: Run an ATT&CK-mapped security audit of the studio stack — verifies RLS/REVOKE, committed-secret hygiene, SSRF protection, webhook HMAC auth, and email DNS (SPF/DKIM/DMARC) against MITRE ATT&CK × ISO 27001:2022 × SOC 2, plus checks the ATT&CK matrix itself is current. Every check is self-guarded so a green is earned (watched to fail a vulnerable fixture), never assumed. Use when asked to security-audit the stack or a client repo, verify security posture, run a controls/compliance or ATT&CK/ISO/SOC coverage check. Not for writing new security features or fixing one specific vulnerability — this verifies and reports findings; it does not remediate.
+argument-hint: [--surface all|repo|infra] [--target <repo>] [--config <infra.config.json>]
+allowed-tools: [Read, Bash, Grep]
 user-invocable: true
 ---
 

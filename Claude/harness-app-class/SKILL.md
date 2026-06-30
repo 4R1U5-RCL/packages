@@ -1,6 +1,8 @@
 ---
 name: harness-app-class
 description: Scaffold a new harness app-class in /studio and wire every registration point (config → planner → generator → evaluator → verify → deploy) so the pipeline recognizes it. Covers BOTH shapes — Track A studio-ops template class (n8n-template/supabase-template) and Track B served-app class (research/webApp).
+argument-hint: <app-class-name> [--track=A|B] [--flag=<camelCaseFlag>] [--kind=<snake_case_kind>] [--no-package]
+allowed-tools: [Read, Write, Edit, Bash, Agent, Grep]
 user-invocable: true
 ---
 

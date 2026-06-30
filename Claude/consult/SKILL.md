@@ -1,6 +1,8 @@
 ---
 name: consult
 description: Cross-validate an answer or a plan through a sequential multi-model chain (base Claude -> GPT-5 -> Gemini 2.5 Pro, optional Perplexity for web facts) routed via a LiteLLM proxy, and report a confidence/risk label derived from inter-model AGREEMENT. Use the `research` flow to answer a question and label confidence (HIGH/MEDIUM/LOW); the `validate` flow to stress-test a plan/proposal (escalates to a third model when >=3 substantive risks surface). The orchestration is self-guarded: it never claims cross-validation it did not actually perform. NOT for one model's opinion, not a fact oracle (a HIGH means models concurred, NOT that the answer is true), and it ASKS before any external web fact-check.
+argument-hint: --flow research|validate [--question "…"|--plan-file <file>] --base-answer "…" [--factcheck] [--report <out.md>]
+allowed-tools: [Read, Bash]
 user-invocable: true
 ---
 

@@ -1,6 +1,8 @@
 ---
 name: dependabot-triage
 description: Triage and batch-merge open Dependabot PRs across the 4R1U5-RCL repos (green patch/minor only; majors held for review)
+argument-hint: [<repo>] [--merge] [--dry-run]
+allowed-tools: [Bash, Read]
 user-invocable: true
 ---
 

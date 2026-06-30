@@ -1,6 +1,8 @@
 ---
 name: diagnose-secret
 description: Diagnose a secret that looks right but 401s at runtime — narrow to one of the four PAT-11 causes, never echoing the value
+argument-hint: <secret-name-or-env-var> [--project=<ref>]
+allowed-tools: [Read, Bash]
 user-invocable: true
 ---
 

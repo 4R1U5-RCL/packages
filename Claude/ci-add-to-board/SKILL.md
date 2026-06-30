@@ -1,6 +1,8 @@
 ---
 name: ci-add-to-board
 description: Wire actions/add-to-project CI into a 4R1U5-RCL repo so new issues/PRs auto-add to its GitHub Projects board
+argument-hint: <repo> [--board=<url>]
+allowed-tools: [Read, Write, Bash]
 user-invocable: true
 ---
 
