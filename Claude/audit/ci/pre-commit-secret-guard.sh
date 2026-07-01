@@ -20,7 +20,7 @@
 #
 # Emergency bypass (use only when you are certain): git commit --no-verify
 
-AUDIT_CHECK="/root/packages/audit/checks/secret-leak.mjs"
+AUDIT_CHECK="/root/packages/Claude/audit/checks/secret-leak.mjs"
 
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
 [ -z "$REPO_ROOT" ] && exit 0
