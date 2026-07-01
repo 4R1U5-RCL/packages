@@ -1,0 +1,35 @@
+{
+  "_comment": "Proposed schedule spec for the nightly-sweep ops-agent DRY-RUN. This file is DECLARATIVE — the runner (nightly-sweep.mjs) does not read it; it documents the cron cadence + wiring the main session applies when it creates the live /schedule. NO secret sits here: creds come from the host environment ($ENV tokens below name them, never their values).",
+
+  "agent": "Claude/ops-agents/nightly-sweep.mjs",
+  "runner": "Claude/ops-agents/scheduled/nightly-sweep.mjs",
+  "mode": "dry-run",
+  "_mode_note": "DRY-RUN ONLY. The runner never forwards --apply. Merging green patch/minor Dependabot PRs and applying audit fixes stay DEFERRED to the main session behind an explicit --apply, per feedback_main-session-executes-guarded-infra.",
+
+  "schedule": {
+    "cron": "0 7 * * *",
+    "timezone": "UTC",
+    "_cadence_note": "Nightly at 07:00 UTC — matches the existing audit/scheduled cadence (audit/scheduled/README.md) so the two nightly jobs sit on the same clock. Minimum interval for a Claude Code /schedule routine is hourly; nightly is well within that."
+  },
+
+  "reads": {
+    "repos": ["4R1U5-RCL/studio", "4R1U5-RCL/tessera", "4R1U5-RCL/mosaic", "4R1U5-RCL/packages"],
+    "gh_auth": "$GH_TOKEN",
+    "_gh_note": "Read-only `gh pr list … --author app/dependabot` + `gh api …/code-scanning/alerts`. The guard blocks any `gh … merge` / `git push`.",
+    "audit_local_checkouts": {
+      "SWEEP_REPO_STUDIO": "$SWEEP_REPO_STUDIO",
+      "SWEEP_REPO_TESSERA": "$SWEEP_REPO_TESSERA",
+      "SWEEP_REPO_MOSAIC": "$SWEEP_REPO_MOSAIC",
+      "SWEEP_REPO_PACKAGES": "$SWEEP_REPO_PACKAGES",
+      "_note": "OPTIONAL. If a var points at a local checkout root, the agent runs the local Claude/audit tool (`run.mjs --surface repo --target <path>`) for that repo's audit signal; else it falls back to the read-only gh code-scanning alert count; else honest-skips with a note."
+    }
+  },
+
+  "notify": {
+    "target": "telegram (via the hosted [STUDIO_NOTIFICATIONS] n8n workflow, ../notify seam)",
+    "NOTIFY_WEBHOOK_URL": "$NOTIFY_WEBHOOK_URL",
+    "NOTIFY_TOKEN": "$NOTIFY_TOKEN",
+    "NOTIFY_SECRET": "$NOTIFY_SECRET",
+    "_note": "The digest is a webhook POST to …/webhook/… — the sanctioned notify channel, NOT a guarded write. With the creds absent the agent honest-skips (nothing sent), never crashes."
+  }
+}
