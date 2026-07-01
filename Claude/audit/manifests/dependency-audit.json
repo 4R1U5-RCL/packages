@@ -1,0 +1,15 @@
+{
+  "control": "dependency-audit",
+  "surface": "app",
+  "reachability": "static",
+  "owasp": "A06:2021 Vulnerable and Outdated Components",
+  "defends": "Dependency-CVE alerting is configured (Dependabot config or an SCA workflow step) so vulnerable/outdated components are detected before a known CVE becomes an exploitable path (OWASP A06).",
+  "globs": [
+    ".github/dependabot.yml",
+    ".github/dependabot.yaml",
+    ".github/workflows/*.yml",
+    ".github/workflows/*.yaml"
+  ],
+  "self_guard": "bad fixture has a .github tree but no qualifying dependency-alerting source (negative control fires as fail); good fixture has a valid dependabot.yml and passes clean.",
+  "note": "Fixed evidence manifest — what the dependency-audit check audits is not model discretion (WORKING_METHOD §1). Absence of ANY dependency-CVE alerting in a readable repo is itself the finding (fail, not unknown); unknown is reserved for an unreadable target. This verifies that alerting is WIRED, not that every advisory is acted on — remediation discipline is practice, not a mechanical check."
+}

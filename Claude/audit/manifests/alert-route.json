@@ -1,0 +1,12 @@
+{
+  "control": "alert-route",
+  "surface": "infra",
+  "defends": "a test event actually reaches the alert channel — closes the detection→response loop",
+  "live_target": {
+    "channel": "STUBBED (notify/ — n8n workflow pending)",
+    "note": "against the stub this reports `unknown` BY CONSTRUCTION until a test event is watched to arrive at a real channel; never a pass, never a fail"
+  },
+  "self_guard": "proven via mock good/bad notifiers (delivered → pass, failed delivery → fail); the live not-wired stub is the unknown path",
+  "stub_state": "NOT WIRED — see notify/README.md",
+  "note": "WORKING_METHOD §1 fixed-scope note"
+}

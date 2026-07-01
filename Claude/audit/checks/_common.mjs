@@ -38,7 +38,16 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const MAPPING = join(HERE, "..", "mapping", "controls.json");
 
 export const VALID_STATUS = ["pass", "fail", "unknown"];
-export const VALID_SURFACE = ["repo", "infra"];
+// Surfaces are the coarse axis (where the control lives). `app` is the third —
+// OWASP Top 10 against the delivered web application — alongside repo and infra.
+export const VALID_SURFACE = ["repo", "infra", "app"];
+// Reachability is the orthogonal finer axis the dispatcher keys on:
+//   static  — verifiable against source/build (CI-runnable, invoked with --target)
+//   dynamic — needs a live endpoint to probe (agent/scheduled, invoked via --config)
+// null is allowed: existing repo/infra checks don't declare it and the dispatcher
+// defaults them (repo→static, infra→dynamic), so the seven original checks are
+// untouched. App checks declare it explicitly (app:static vs app:dynamic).
+export const VALID_REACHABILITY = ["static", "dynamic"];
 
 // Exit codes let CI/scheduled callers branch without parsing JSON:
 //   0 pass, 1 fail (finding), 2 unknown (could not verify — treat as not-green)
@@ -67,12 +76,19 @@ export function loadCitation(control) {
 }
 
 export class Result {
-  constructor(control, surface) {
+  // reachability is optional (null for the original repo/infra checks). When an
+  // `app` check passes "static"/"dynamic" it is validated and carried through to
+  // the emitted object so the dispatcher and report can see the sub-tag.
+  constructor(control, surface, reachability = null) {
     if (!VALID_SURFACE.includes(surface)) {
       throw new Error(`surface must be one of ${VALID_SURFACE}, got ${surface}`);
     }
+    if (reachability !== null && !VALID_REACHABILITY.includes(reachability)) {
+      throw new Error(`reachability must be one of ${VALID_REACHABILITY} or null, got ${reachability}`);
+    }
     this.control = control;
     this.surface = surface;
+    this.reachability = reachability;
     this.status = "unknown";
     this.evidence = "";
     this.message = "";
@@ -117,6 +133,7 @@ export class Result {
       control: this.control,
       title: cite.title ?? null,
       surface: this.surface,
+      reachability: this.reachability,
       status,
       evidence: this.evidence,
       message: this.message,
@@ -158,7 +175,7 @@ function cliEmit(argv) {
   for (const req of ["control", "surface", "status"]) {
     if (!f[req]) { process.stderr.write(`missing --${req}\n`); return 64; }
   }
-  const r = new Result(f.control, f.surface);
+  const r = new Result(f.control, f.surface, f.reachability ?? null);
   r.negativeControl({ injected: truthy(f["nc-injected"]),
                       fired: truthy(f["nc-fired"]), note: f["nc-note"] ?? "" });
   r.set(f.status, { evidence: f.evidence ?? "", message: f.message ?? "" });

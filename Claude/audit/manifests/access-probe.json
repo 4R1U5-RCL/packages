@@ -1,0 +1,16 @@
+{
+  "control": "access-probe",
+  "surface": "app",
+  "reachability": "dynamic",
+  "owasp": "A01:2021 Broken Access Control",
+  "defends": "Object-level access control (IDOR) on the running app: an authenticated user A must not be able to read user B's record by altering the object id. GET ${base}record/{id} with a bearer token — A reading A's own record must succeed (ownership baseline), A reading B's record must be denied.",
+  "live_target": {
+    "probe": "GET ${base}record/{id} with `Authorization: Bearer <token>`. The check first reads the user's OWN record (ownership baseline — must 2xx), then injects the cross-user read (A's token requesting B's record id). Denied (non-2xx or {denied:true}) -> pass; B's record returned (2xx) -> fail (IDOR).",
+    "endpoint_url": null,
+    "credentials_note": "A live run needs --target <baseUrl> plus --own-token, --own-id and --foreign-id (two real users and an object each owns). Tokens are passed via argv from $ENV tokens expanded by run.mjs, never written into the config file. Without them the check returns `unknown` (self-guard OK, no live probe), never a silent pass.",
+    "resource_note": "Resource path defaults to `record/{id}`; override with --resource \"<path-with-{id}>\" to match the real app's route."
+  },
+  "self_guard": "Proven offline against bundled mock apps in fixtures/access-probe/ (good = enforces ownership -> pass; bad = IDOR sink -> fail). The negative control is the bad mock: user A's token reads user B's record and the detector must fire (verdict fail). The same classifyEndpoint() path used on a live --target is exercised on the mocks first; a pass on a live target is only emitted once that negative control has fired (enforced structurally by _common.mjs).",
+  "reuse_note": "This is the app-dynamic complement of the repo-surface rls/revoke checks — the SAME access-control boundary tested from outside the running app. It does not re-implement RLS policy reasoning; migration-policy correctness stays single-homed in rls.mjs/revoke.mjs (WORKING_METHOD §5/D8 — one check per boundary).",
+  "note": "Fixed evidence/probe manifest — what access-probe probes and how it judges is not model discretion (WORKING_METHOD §1). surface=app, reachability=dynamic: the control is exercised against the live app, so it runs via the agent path (SKILL.md) against staging, never the CI gate."
+}

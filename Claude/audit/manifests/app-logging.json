@@ -1,0 +1,18 @@
+{
+  "control": "app-logging",
+  "surface": "app",
+  "reachability": "static",
+  "owasp": "A09:2021 Security Logging and Monitoring Failures",
+  "defends": "The app wires security-event logging into its auth paths so authentication/authorization events leave an audit trail (OWASP A09).",
+  "globs": [
+    "apps/*/**/auth/**/*.ts",
+    "apps/*/**/auth/**/*.tsx",
+    "apps/*/**/auth/**/*.js",
+    "apps/*/middleware.ts",
+    "apps/*/src/middleware.ts",
+    "apps/*/**/login/**/*.ts",
+    "packages/*/**/auth/**/*.ts"
+  ],
+  "self_guard": "bad fixture has auth files scanned but zero security-logging-sink calls (negative control fires as fail); good fixture calls a recognized sink and passes clean.",
+  "note": "Fixed evidence manifest — what the app-logging check audits is not model discretion (WORKING_METHOD §1). This verifies the WIRING of security-event logging is PRESENT in auth code (a recognized logging-sink call exists), not the completeness or quality of what is logged — sufficiency of the audit trail is practice, not a mechanical check."
+}

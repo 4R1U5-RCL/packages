@@ -1,0 +1,15 @@
+{
+  "control": "device-signin-alerts",
+  "surface": "infra",
+  "defends": "New-device / new-sign-in alerting on the apex Google and GitHub identities: an attacker authenticating from an unrecognised device raises a notification the owner can act on, giving early detection of account takeover (T1078 valid accounts).",
+  "state_document": {
+    "google_new_device_alerts_enabled": "Google account: new-device / unusual sign-in security alerts are enabled",
+    "github_new_device_alerts_enabled": "GitHub account: new-device sign-in (and new-device email) alerts are enabled"
+  },
+  "live_target": {
+    "source": "Google account-security settings + GitHub account-security/notification settings (respective account-security APIs)",
+    "note": "unknown without live creds; use --state-fixture offline"
+  },
+  "self_guard": "bad fixture sets github_new_device_alerts_enabled=false (disabled control injected); validator must flag fail (negative control fires). good fixture has both keys true and must pass clean.",
+  "note": "Fixed evidence manifest — the audited identities and the required state keys are not model discretion (WORKING_METHOD §1). All required keys must be true to pass; any false fails; any missing/unreadable is unknown."
+}

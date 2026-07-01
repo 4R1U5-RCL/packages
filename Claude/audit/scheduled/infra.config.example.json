@@ -16,6 +16,31 @@
     "_note": "Resend sending domain (TE-15 verified DKIM/SPF/MX live). NOTE the container-vs-public DNS trap: a live run may return unknown in-container even when records exist publicly. Run this from a host whose resolver sees public DNS."
   },
 
+  "supabase-logging": {
+    "argv": ["--state-fixture", "$SUPABASE_LOGGING_STATE_JSON"],
+    "_note": "Logging/detection config check. Supply a state document — { auth_logs_enabled, api_logs_enabled, log_drain_configured } — fetched from the Supabase management API into a file the host points $SUPABASE_LOGGING_STATE_JSON at. No state => unknown, never a silent pass. (For deterministic offline proof: fixtures/supabase-logging/good/state.json.)"
+  },
+
+  "gh-secret-scanning": {
+    "argv": ["--state-fixture", "$GH_SECRET_SCANNING_STATE_JSON"],
+    "_note": "State document { secret_scanning_enabled, push_protection_enabled } from the GitHub repo security-settings API. Detection-config complement of the repo-surface secret-leak check. No state => unknown."
+  },
+
+  "device-signin-alerts": {
+    "argv": ["--state-fixture", "$DEVICE_SIGNIN_ALERTS_STATE_JSON"],
+    "_note": "State document { google_new_device_alerts_enabled, github_new_device_alerts_enabled } from the apex Google + GitHub account-security settings. No state => unknown."
+  },
+
+  "vercel-observability": {
+    "argv": ["--state-fixture", "$VERCEL_OBSERVABILITY_STATE_JSON"],
+    "_note": "State document { observability_enabled, firewall_enabled } from the Vercel project settings API. No state => unknown."
+  },
+
+  "alert-route": {
+    "argv": [],
+    "_note": "STUBBED — the notify/ alert channel is not wired (n8n workflow pending). With no --notifier it runs against the real notify/ stub and reports `unknown` BY CONSTRUCTION (never a pass) until a test event is watched to arrive. Wire n8n behind notify/notify.mjs, then point a live --notifier at the real route. See notify/README.md."
+  },
+
   "matrix-freshness": {
     "argv": [],
     "_note": "No args: fetches the pinned source in mapping/ATTACK_VERSION and compares. Stale is a maintenance finding, never a security alarm or a deploy block."

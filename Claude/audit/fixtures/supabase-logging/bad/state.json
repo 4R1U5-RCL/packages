@@ -1,0 +1,5 @@
+{
+  "auth_logs_enabled": false,
+  "api_logs_enabled": true,
+  "log_drain_configured": true
+}

@@ -1,11 +1,16 @@
-# audit-gate.yml — LAYER 2b: the CI gate (repo subset, at deploy).
+# audit-gate.yml — LAYER 2b: the CI gate (source-reachable subset, at deploy).
 #
 # Drop this into a CLIENT repo's .github/workflows/. It runs the audit package's
-# REPO-surface checks against the checked-out repo and BLOCKS the build on a
-# finding. It does NOT cover infra controls — CI's sandbox cannot safely hold the
-# credentials to probe live n8n / Firecrawl / Resend. Infra is covered by the
-# scheduled runner (Layer 2c); a full cross-surface audit is the agent run
-# (Layer 2a). See ci/README.md for that honest split.
+# STATIC checks against the checked-out repo and BLOCKS the build on a finding.
+# "Static" = reachability=static: every repo-surface control PLUS the app:static
+# OWASP checks (security headers, dependency-CVE alerting, app-side security
+# logging) — everything verifiable from source/build without a running app.
+#
+# It does NOT cover dynamic controls — neither infra (live n8n / Firecrawl /
+# Resend, whose credentials CI's sandbox can't safely hold) nor app:dynamic (auth
+# bypass / IDOR / cookie flags, which need a deployed app to probe). Infra is
+# covered by the scheduled runner (Layer 2c); app:dynamic + a full cross-surface
+# audit are the agent run (Layer 2a). See ci/README.md for that honest split.
 #
 # The package is CONSUMED BY PULLING A PINNED VERSION (never copy-forked):
 # checkout 4R1U5-RCL/packages at a pinned ref, then run audit/run.mjs in place.
@@ -43,8 +48,12 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Run repo-surface controls (blocks on a finding)
+      - name: Run static controls — repo + app:static (blocks on a finding)
+        # --reachability static selects every source-reachable control: all
+        # repo-surface checks plus the app:static OWASP checks. Dynamic controls
+        # (infra + app:dynamic) are structurally excluded — CI has no live infra
+        # credentials and no running app to probe.
         # run.mjs exit codes: 0 all pass · 1 a finding (fail) · 2 unverifiable.
         # The gate blocks on BOTH a finding and an unverifiable result — a control
         # CI cannot verify must not pass silently through the gate.
-        run: node audit-pkg/audit/run.mjs --surface repo --target target
+        run: node audit-pkg/audit/run.mjs --reachability static --target target
