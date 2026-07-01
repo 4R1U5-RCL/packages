@@ -1,0 +1,18 @@
+{
+  "control": "security-headers",
+  "surface": "app",
+  "reachability": "static",
+  "owasp": "A05:2021 Security Misconfiguration",
+  "defends": "The delivered Next.js app sets the security response headers (CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy) that harden the browser against drive-by compromise and injected script (OWASP A05).",
+  "globs": [
+    "next.config.*",
+    "apps/*/next.config.*",
+    "vercel.json",
+    "apps/*/vercel.json",
+    "middleware.*",
+    "apps/*/middleware.*",
+    "apps/*/src/middleware.*"
+  ],
+  "self_guard": "bad fixture config is missing >=1 required header (negative control fires as fail); good fixture sets all five and passes clean.",
+  "note": "Fixed evidence manifest — what the security-headers check audits is not model discretion (WORKING_METHOD §1). This verifies the required header NAMES are configured in the app's static header config; it does not evaluate each header's VALUE/strength (e.g. CSP directive tightness) — that is policy review, not a mechanical presence check."
+}

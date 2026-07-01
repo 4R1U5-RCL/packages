@@ -1,0 +1,4 @@
+{
+  "secret_scanning_enabled": true,
+  "push_protection_enabled": true
+}

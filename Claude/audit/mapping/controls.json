@@ -113,5 +113,175 @@
       {"id": "CC3.2", "name": "Identify and analyze risks to the achievement of objectives"}
     ],
     "rationale": "This is a meta/currency control, not an adversary behaviour, so attack is intentionally empty; keeping the bundled ATT&CK matrix in step with MITRE's published release is threat-intelligence currency (A.5.7) and the detection of newly-published technique coverage (CC7.1)."
+  },
+  "security-headers": {
+    "title": "Security response headers present (OWASP A05 — CSP / HSTS / X-Frame-Options / X-Content-Type-Options / Referrer-Policy)",
+    "surface": "app",
+    "owasp": "A05:2021 Security Misconfiguration",
+    "attack": [
+      {"id": "T1189", "name": "Drive-by Compromise", "tactic": "Initial Access"},
+      {"id": "T1059.007", "name": "Command and Scripting Interpreter: JavaScript", "tactic": "Execution"}
+    ],
+    "iso27001_2022": [
+      {"control": "A.8.26", "name": "Application security requirements"},
+      {"control": "A.8.9", "name": "Configuration management"}
+    ],
+    "soc2_cc": [
+      {"id": "CC6.6", "name": "Logical access security measures against threats from outside the system boundaries"},
+      {"id": "CC7.1", "name": "Detection/monitoring to identify new vulnerabilities and configuration changes"}
+    ],
+    "rationale": "Content-Security-Policy constrains script execution (mitigating injected JavaScript, T1059.007), HSTS forces TLS, and X-Frame-Options/X-Content-Type-Options/Referrer-Policy harden the browser against framing and content-type confusion used in drive-by compromise (T1189). Their presence in the delivered app's response is OWASP A05 misconfiguration hardening and the secure-configuration baseline A.8.26/A.8.9 and CC6.6."
+  },
+  "dependency-audit": {
+    "title": "Dependency-CVE alerting configured (OWASP A06 — Dependabot/SCA enabled)",
+    "surface": "app",
+    "owasp": "A06:2021 Vulnerable and Outdated Components",
+    "attack": [
+      {"id": "T1195.001", "name": "Supply Chain Compromise: Compromise Software Dependencies and Development Tools", "tactic": "Initial Access"},
+      {"id": "T1190", "name": "Exploit Public-Facing Application", "tactic": "Initial Access"}
+    ],
+    "iso27001_2022": [
+      {"control": "A.8.8", "name": "Management of technical vulnerabilities"},
+      {"control": "A.8.25", "name": "Secure development life cycle"}
+    ],
+    "soc2_cc": [
+      {"id": "CC7.1", "name": "Detection/monitoring to identify new vulnerabilities and configuration changes"},
+      {"id": "CC3.2", "name": "Identify and analyze risks to the achievement of objectives"}
+    ],
+    "rationale": "A configured dependency-CVE alerting pipeline (Dependabot or an SCA workflow) detects vulnerable/outdated components (OWASP A06) before a known CVE in a transitive dependency (T1195.001) becomes an exploitable path into the public-facing app (T1190); maintaining that pipeline is the technical-vulnerability management of A.8.8/A.8.25 and the new-vulnerability detection of CC7.1. NB: the handoff's 'reuse existing Dependabot check' was inaccurate — no such check existed; this is built fresh and also satisfies the logging-table 'Dependabot enabled' row."
+  },
+  "app-logging": {
+    "title": "App-side security-event logging present (OWASP A09 — auth/security events logged)",
+    "surface": "app",
+    "owasp": "A09:2021 Security Logging and Monitoring Failures",
+    "attack": [
+      {"id": "T1562.008", "name": "Impair Defenses: Disable or Modify Cloud Logs", "tactic": "Stealth"}
+    ],
+    "iso27001_2022": [
+      {"control": "A.8.15", "name": "Logging"},
+      {"control": "A.8.16", "name": "Monitoring activities"}
+    ],
+    "soc2_cc": [
+      {"id": "CC7.2", "name": "Monitor system components for anomalies indicative of malicious acts"},
+      {"id": "CC7.3", "name": "Evaluate security events to determine whether they could or did result in a failure"}
+    ],
+    "rationale": "An app that logs authentication and authorization-failure events leaves the audit trail an attacker would otherwise operate beneath; insufficient logging (OWASP A09) is the precondition the adversary relies on when defenses/logs are absent (T1562.008). Emitting those events is the logging and monitoring of A.8.15/A.8.16 and CC7.2/CC7.3. This is the app-side complement of the infra logging-config checks."
+  },
+  "access-probe": {
+    "title": "Object-level access control enforced at the app layer (OWASP A01 — no IDOR)",
+    "surface": "app",
+    "owasp": "A01:2021 Broken Access Control",
+    "attack": [
+      {"id": "T1190", "name": "Exploit Public-Facing Application", "tactic": "Initial Access"},
+      {"id": "T1213", "name": "Data from Information Repositories", "tactic": "Collection"}
+    ],
+    "iso27001_2022": [
+      {"control": "A.8.3", "name": "Information access restriction"},
+      {"control": "A.5.15", "name": "Access control"}
+    ],
+    "soc2_cc": [
+      {"id": "CC6.1", "name": "Logical access security software, infrastructure, and architectures over protected information assets"},
+      {"id": "CC6.3", "name": "Authorize, modify, or remove access based on roles (least privilege / segregation of duties)"}
+    ],
+    "rationale": "Probing whether one authenticated user can reach another user's object by ID (IDOR) tests broken access control (OWASP A01) from outside the running app — the exploit of the public-facing API (T1190) to read another tenant's records (T1213). This is the SAME access-control boundary the repo-surface rls/revoke checks verify in policy; access-probe is the app-dynamic complement (the boundary tested as exercised), not a second source of truth — migration-policy correctness stays single-homed in rls.mjs/revoke.mjs. It is the access restriction of A.8.3/A.5.15 and CC6.1/CC6.3."
+  },
+  "cookie-flags": {
+    "title": "Session cookie flags set (OWASP A07 — HttpOnly + Secure + SameSite)",
+    "surface": "app",
+    "owasp": "A07:2021 Identification and Authentication Failures",
+    "attack": [
+      {"id": "T1539", "name": "Steal Web Session Cookie", "tactic": "Credential Access"},
+      {"id": "T1550.004", "name": "Use Alternate Authentication Material: Web Session Cookie", "tactic": "Lateral Movement"}
+    ],
+    "iso27001_2022": [
+      {"control": "A.8.5", "name": "Secure authentication"},
+      {"control": "A.8.24", "name": "Use of cryptography"}
+    ],
+    "soc2_cc": [
+      {"id": "CC6.1", "name": "Logical access security software, infrastructure, and architectures over protected information assets"},
+      {"id": "CC6.7", "name": "Restrict and protect the transmission and movement of information to authorized processes"}
+    ],
+    "rationale": "HttpOnly keeps the session cookie out of reach of injected JavaScript, Secure binds it to TLS, and SameSite blocks cross-site send — together denying the theft (T1539) and replay (T1550.004) of the web session cookie (OWASP A07). Setting them is the secure-authentication control A.8.5/A.8.24 and the access/transmission protection of CC6.1/CC6.7."
+  },
+  "supabase-logging": {
+    "title": "Supabase auth/API logging + log drain enabled (detection config)",
+    "surface": "infra",
+    "attack": [
+      {"id": "T1562.008", "name": "Impair Defenses: Disable or Modify Cloud Logs", "tactic": "Stealth"}
+    ],
+    "iso27001_2022": [
+      {"control": "A.8.15", "name": "Logging"},
+      {"control": "A.8.16", "name": "Monitoring activities"}
+    ],
+    "soc2_cc": [
+      {"id": "CC7.2", "name": "Monitor system components for anomalies indicative of malicious acts"},
+      {"id": "CC7.3", "name": "Evaluate security events to determine whether they could or did result in a failure"}
+    ],
+    "rationale": "Confirming Supabase auth/API logging (and a configured log drain where applicable) is on verifies the smoke detector is installed and powered — without it an adversary operates beneath the record (T1562.008). This is a presence-of-control config check: it asserts logging is enabled (A.8.15/A.8.16, CC7.2), not that anyone reads the logs (practice, owned by the companion doc)."
+  },
+  "gh-secret-scanning": {
+    "title": "GitHub secret scanning + push protection enabled (detection config)",
+    "surface": "infra",
+    "attack": [
+      {"id": "T1552.001", "name": "Unsecured Credentials: Credentials In Files", "tactic": "Credential Access"},
+      {"id": "T1195", "name": "Supply Chain Compromise", "tactic": "Initial Access"}
+    ],
+    "iso27001_2022": [
+      {"control": "A.8.4", "name": "Access to source code"},
+      {"control": "A.8.28", "name": "Secure coding"}
+    ],
+    "soc2_cc": [
+      {"id": "CC7.1", "name": "Detection/monitoring to identify new vulnerabilities and configuration changes"},
+      {"id": "CC6.1", "name": "Logical access security software, infrastructure, and architectures over protected information assets"}
+    ],
+    "rationale": "Secret scanning detects credentials committed to the repo (T1552.001) and push protection blocks them at commit time, narrowing a supply-chain foothold (T1195). Both being enabled is the source-code protection of A.8.4/A.8.28 and the detection control CC7.1. This is the detection-config complement of the repo-surface secret-leak check, which scans tracked content directly."
+  },
+  "device-signin-alerts": {
+    "title": "Apex-identity new-device sign-in alerts enabled (Google + GitHub)",
+    "surface": "infra",
+    "attack": [
+      {"id": "T1078", "name": "Valid Accounts", "tactic": "Initial Access, Persistence, Privilege Escalation, Stealth"},
+      {"id": "T1110", "name": "Brute Force", "tactic": "Credential Access"}
+    ],
+    "iso27001_2022": [
+      {"control": "A.8.16", "name": "Monitoring activities"},
+      {"control": "A.5.17", "name": "Authentication information"}
+    ],
+    "soc2_cc": [
+      {"id": "CC7.2", "name": "Monitor system components for anomalies indicative of malicious acts"},
+      {"id": "CC6.1", "name": "Logical access security software, infrastructure, and architectures over protected information assets"}
+    ],
+    "rationale": "New-device sign-in alerts on the apex Google and GitHub identities surface a compromised or brute-forced account (T1078/T1110) the moment it is used from an unfamiliar device — anomaly monitoring (A.8.16, CC7.2) over the authentication information that gates everything downstream (A.5.17). Presence-of-control config check: alerts enabled, not whether anyone acts on them."
+  },
+  "vercel-observability": {
+    "title": "Vercel observability + firewall configured (detection config)",
+    "surface": "infra",
+    "attack": [
+      {"id": "T1190", "name": "Exploit Public-Facing Application", "tactic": "Initial Access"},
+      {"id": "T1499", "name": "Endpoint Denial of Service", "tactic": "Impact"}
+    ],
+    "iso27001_2022": [
+      {"control": "A.8.16", "name": "Monitoring activities"},
+      {"control": "A.8.20", "name": "Networks security"}
+    ],
+    "soc2_cc": [
+      {"id": "CC7.2", "name": "Monitor system components for anomalies indicative of malicious acts"},
+      {"id": "CC6.6", "name": "Logical access security measures against threats from outside the system boundaries"}
+    ],
+    "rationale": "Vercel observability gives the request/runtime telemetry to spot exploitation of the public-facing app (T1190), and the firewall blunts edge abuse and denial of service (T1499) at the boundary. Both configured is the monitoring (A.8.16, CC7.2) and network-boundary protection (A.8.20, CC6.6) of the hosting surface. Presence-of-control config check."
+  },
+  "alert-route": {
+    "title": "Alert route delivers a test event to the notification channel",
+    "surface": "infra",
+    "attack": [],
+    "iso27001_2022": [
+      {"control": "A.8.16", "name": "Monitoring activities"},
+      {"control": "A.5.24", "name": "Information security incident management planning and preparation"}
+    ],
+    "soc2_cc": [
+      {"id": "CC7.3", "name": "Evaluate security events to determine whether they could or did result in a failure"},
+      {"id": "CC7.4", "name": "Respond to identified security incidents"}
+    ],
+    "rationale": "This control closes the loop between detection and response: a test event must actually reach the alert channel for any of the logging-config controls to mean anything operationally (A.8.16/A.5.24, CC7.3/CC7.4). It is a delivery/plumbing control, not an adversary behaviour, so attack is intentionally empty (as with matrix-freshness). CURRENT STATE: the notification channel is STUBBED (notify/) pending an n8n workflow, so against the real route this check reports `unknown` by construction — an honest unverified, never a pass — until a test event is watched to arrive."
   }
 }

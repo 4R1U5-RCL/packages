@@ -1,0 +1,15 @@
+{
+  "control": "vercel-observability",
+  "surface": "infra",
+  "defends": "Vercel project observability and the edge firewall: the deployed app emits telemetry (attacks/anomalies are visible) and has the firewall standing in front of it for first-line detection and blocking (T1190 exploit public-facing application).",
+  "state_document": {
+    "observability_enabled": "Vercel project: Observability is enabled (telemetry/monitoring on)",
+    "firewall_enabled": "Vercel project: the Firewall is enabled (edge protection on)"
+  },
+  "live_target": {
+    "source": "Vercel project settings via the Vercel API (project observability + firewall configuration)",
+    "note": "unknown without live creds; use --state-fixture offline"
+  },
+  "self_guard": "bad fixture sets firewall_enabled=false (disabled control injected); validator must flag fail (negative control fires). good fixture has both keys true and must pass clean.",
+  "note": "Fixed evidence manifest — the audited project surface and the required state keys are not model discretion (WORKING_METHOD §1). All required keys must be true to pass; any false fails; any missing/unreadable is unknown."
+}

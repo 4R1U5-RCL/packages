@@ -1,7 +1,7 @@
 ---
 name: security-audit
-description: Run an ATT&CK-mapped security audit of the studio stack — verifies RLS/REVOKE, committed-secret hygiene, SSRF protection, webhook HMAC auth, and email DNS (SPF/DKIM/DMARC) against MITRE ATT&CK × ISO 27001:2022 × SOC 2, plus checks the ATT&CK matrix itself is current. Every check is self-guarded so a green is earned (watched to fail a vulnerable fixture), never assumed. Use when asked to security-audit the stack or a client repo, verify security posture, run a controls/compliance or ATT&CK/ISO/SOC coverage check. Not for writing new security features or fixing one specific vulnerability — this verifies and reports findings; it does not remediate.
-argument-hint: [--surface all|repo|infra] [--target <repo>] [--config <infra.config.json>]
+description: Run an ATT&CK-mapped security audit of the studio stack across three surfaces — repo (RLS/REVOKE, committed-secret hygiene), infra (SSRF, webhook HMAC auth, email SPF/DKIM/DMARC, logging/detection config), and app (OWASP Top 10 against the delivered web app: access control/IDOR, security headers, dependency CVEs, cookie flags, app-side logging) — mapped to MITRE ATT&CK × ISO 27001:2022 × SOC 2, plus a check that the ATT&CK matrix itself is current. Every check is self-guarded so a green is earned (watched to fail a vulnerable fixture), never assumed. Use when asked to security-audit the stack or a client repo, run an OWASP/Top-10 review, verify security posture, or run a controls/compliance or ATT&CK/ISO/SOC coverage check. Not for writing new security features or fixing one specific vulnerability — this verifies and reports findings; it does not remediate.
+argument-hint: [--surface all|repo|infra|app] [--target <repo>] [--config <infra.config.json>]
 allowed-tools: [Read, Bash, Grep]
 user-invocable: true
 ---
@@ -9,10 +9,27 @@ user-invocable: true
 # security-audit
 
 LAYER 2a of the `audit` package — the agent-facing entry point, and the only one
-that audits the **full cross-surface** target (repo + hosted infra) in one pass,
-on demand. The CI gate (`ci/`) covers the repo subset at deploy; the scheduled
-runner (`scheduled/`) covers infra on a timer. You cover both, because only you
-can reach and adapt to live infra.
+that audits the **full cross-surface** target (repo + hosted infra + the running
+app) in one pass, on demand. The CI gate (`ci/`) covers the source-reachable
+subset (`--reachability static`: repo + app:static) at deploy; the scheduled
+runner (`scheduled/`) covers infra on a timer. You cover everything — including
+the **app:dynamic** OWASP probes — because only you can reach and adapt to live
+infra and a deployed staging app.
+
+## Surfaces and reachability
+
+Each control declares a **surface** (where it lives) and a **reachability** (how
+it is reached). Reachability is what the dispatcher keys on:
+
+| Surface | Reachability | Reached how | Run by |
+|---------|--------------|-------------|--------|
+| `repo` | static | read the checkout (`--target`) | CI gate, agent |
+| `app` | static | read the checkout (`--target`) — headers/deps/logging config | CI gate, agent |
+| `app` | dynamic | probe a **deployed staging app** (`--config`) — IDOR, cookie flags | **agent only** |
+| `infra` | dynamic | probe hosted services (`--config`) — n8n/Firecrawl/Resend + logging-config state | scheduled, agent |
+
+`app:dynamic` is never run by the CI gate — CI has no running app to probe. Point
+it at a deployed **staging** URL, never production, and never with prod secrets.
 
 You **call** the deterministic checks in `checks/`. You never re-describe or
 reimplement a check here — one check, one home (`checks/<control>.mjs`), three
@@ -65,19 +82,54 @@ Each check prints one JSON line (the contract in `README.md`): `status` of
 
 ## What each control audits
 
-| Control | Surface | Audits | Live target |
-|---------|---------|--------|-------------|
-| `rls` | repo | every app-data table enables row-level security | `packages/db` migrations |
-| `revoke` | repo | PII tables revoke baseline grants from `anon`+`public` (the DEFECT-1 class) | `packages/db` migrations |
-| `secret-leak` | repo | no committed secrets; `.env` is gitignored | tracked source files |
-| `ssrf` | infra | the scrape path refuses internal/loopback/link-local targets | Firecrawl via n8n |
-| `webhook-auth` | infra | inbound webhooks reject unsigned/wrong-sig payloads (HMAC-SHA256) | n8n webhooks |
-| `dns-auth` | infra | sending domain has SPF + DKIM + DMARC | Resend domain (tessera-project.dev) |
-| `matrix-freshness` | infra | the pinned ATT&CK version matches MITRE's current release | MITRE STIX feed |
+| Control | Surface · reach | OWASP | Audits | Live target |
+|---------|-----------------|-------|--------|-------------|
+| `rls` | repo · static | A01 | every app-data table enables row-level security | `packages/db` migrations |
+| `revoke` | repo · static | A01 | PII tables revoke baseline grants from `anon`+`public` (the DEFECT-1 class) | `packages/db` migrations |
+| `secret-leak` | repo · static | — | no committed secrets; `.env` is gitignored | tracked source files |
+| `security-headers` | app · static | A05 | CSP/HSTS/X-Frame-Options/X-Content-Type-Options/Referrer-Policy configured | `apps/*/next.config.ts`, `vercel.json` |
+| `dependency-audit` | app · static | A06 | dependency-CVE alerting configured (Dependabot / SCA) | `.github/dependabot.yml`, workflows |
+| `app-logging` | app · static | A09 | security-event logging wired into auth paths | auth route/middleware source |
+| `access-probe` | app · dynamic | A01 | IDOR: user A cannot read user B's record via the API | **deployed staging app** |
+| `cookie-flags` | app · dynamic | A07 | session cookie sets HttpOnly + Secure + SameSite | **deployed staging app** |
+| `ssrf` | infra · dynamic | A10 | the scrape path refuses internal/loopback/link-local targets | Firecrawl via n8n |
+| `webhook-auth` | infra · dynamic | — | inbound webhooks reject unsigned/wrong-sig payloads (HMAC-SHA256) | n8n webhooks |
+| `dns-auth` | infra · dynamic | — | sending domain has SPF + DKIM + DMARC | Resend domain (tessera-project.dev) |
+| `supabase-logging` | infra · dynamic | A09 | auth/API logging + log drain enabled | Supabase mgmt API / state doc |
+| `gh-secret-scanning` | infra · dynamic | — | secret scanning + push protection enabled | GitHub repo security settings |
+| `device-signin-alerts` | infra · dynamic | — | Google + GitHub new-device sign-in alerts on | account-security settings |
+| `vercel-observability` | infra · dynamic | — | observability + firewall configured | Vercel project settings |
+| `alert-route` | infra · dynamic | A09 | a test event reaches the alert channel — **STUBBED (see below)** | notify/ seam (n8n pending) |
+| `matrix-freshness` | infra · dynamic | — | the pinned ATT&CK version matches MITRE's current release | MITRE STIX feed |
 
 The fixed manifests in `manifests/` define exactly what each check pulls — that
 scope is not your discretion (WORKING_METHOD §1). Read a manifest to see a
-control's real globs/endpoints and its live-target notes/traps.
+control's real globs/endpoints/state-document shape and its live-target notes/traps.
+
+### Reuse, not duplication — one check per boundary (WORKING_METHOD §5/D8)
+- **A01 broken access control** is ONE boundary with two views: `rls`/`revoke`
+  verify the migration policy (repo); `access-probe` exercises the same boundary
+  through the running app (IDOR). `access-probe` does not re-implement RLS
+  reasoning — policy correctness stays single-homed in `rls.mjs`.
+- **A10 SSRF on app endpoints** reuses the existing `ssrf` check — point it at an
+  app endpoint via `--config` `--target`; there is no second SSRF script.
+- **A06** is satisfied by `dependency-audit` (it doubles as the "Dependabot
+  enabled" logging-config row).
+
+### The alert route is deliberately STUBBED
+`alert-route` depends on a notification channel that does not exist yet — an n8n
+workflow will be wired behind the `notify/` seam later. Against the stub it
+reports **`unknown`** (an honest *unverified* — channel not wired), never a pass.
+Do not let it flip to `done`/`pass` until you have watched a real test event
+arrive. See `notify/README.md` for the seam contract. The n8n workflow that lands
+behind it is **your hosted infrastructure**, never client-delivered code (baseline §8).
+
+### Companion (non-mechanical) layer
+This package builds only the *configuration* half of logging/detection — that the
+controls are installed and enabled. The *practice* — reading alerts, triaging,
+incident-response execution — is not mechanically checkable and lives in the
+Incident-Response / Logging & Detection docs, not in `checks/`. A green here never
+claims anyone is watching the alerts.
 
 ## Assembling the report
 

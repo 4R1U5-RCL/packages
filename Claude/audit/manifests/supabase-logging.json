@@ -1,0 +1,16 @@
+{
+  "control": "supabase-logging",
+  "surface": "infra",
+  "defends": "Audit/observability logging on the Supabase project: auth event logs, API logs, and an external log drain are all enabled so security-relevant activity leaves a durable trail (defends against silent log-disabling, T1562.008; baseline: logging & monitoring, A.8.15 / A.8.16).",
+  "state_document": {
+    "auth_logs_enabled": "true ⇔ Supabase auth event logging is on (sign-ins, token issuance, admin actions are recorded)",
+    "api_logs_enabled": "true ⇔ API/PostgREST/edge request logging is on (data-access requests are recorded)",
+    "log_drain_configured": "true ⇔ an external log drain is configured so logs are exported and survive beyond the project's local retention"
+  },
+  "live_target": {
+    "source": "Supabase management API (project logging / log-drain settings)",
+    "note": "unknown without live creds; use --state-fixture offline. No Supabase management-API credentials exist in-container, so a live run cannot fetch the settings document and returns status=unknown (never a silent pass). The SAME validator runs on the fixture and on a (would-be) live document."
+  },
+  "self_guard": "Before judging any target the EXACT validator runs on fixtures/supabase-logging/{good,bad}/state.json: good (all required keys true) must pass clean; bad (auth_logs_enabled=false) is the injected negative control and must be flagged fail. Self-guard not holding ⇒ unknown, never pass.",
+  "note": "Fixed evidence manifest — the required state-document keys (auth_logs_enabled, api_logs_enabled, log_drain_configured) are not model discretion (WORKING_METHOD §1). ALL must be boolean-true for a pass; any false ⇒ fail; any missing/non-boolean key ⇒ unknown."
+}

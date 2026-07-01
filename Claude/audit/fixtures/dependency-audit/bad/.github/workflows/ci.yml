@@ -1,0 +1,21 @@
+name: CI
+
+# BAD fixture: an unrelated build/test workflow. It runs install, build, and
+# tests only -- there is no software-composition or vulnerability-alerting step
+# of any kind, and no auto-update config lives anywhere in this tree.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm run build
+      - run: npm test

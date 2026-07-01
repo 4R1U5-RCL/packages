@@ -32,13 +32,22 @@ const MANIFESTS = join(HERE, "manifests");
 const CHECKS = join(HERE, "checks");
 
 function parseArgs(argv) {
-  const o = { surface: "all", target: process.cwd(), config: null };
+  const o = { surface: "all", reachability: null, target: process.cwd(), config: null };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === "--surface") o.surface = argv[++i];
+    else if (argv[i] === "--reachability") o.reachability = argv[++i];
     else if (argv[i] === "--target") o.target = argv[++i];
     else if (argv[i] === "--config") o.config = argv[++i];
   }
   return o;
+}
+
+// Reachability is the axis the dispatcher keys on. A manifest may declare it
+// explicitly (app checks do: "static"/"dynamic"); when absent we default so the
+// original checks are unchanged — infra→dynamic (probe a live endpoint via
+// --config), everything else→static (read source via --target).
+function defaultReachability(surface) {
+  return surface === "infra" ? "dynamic" : "static";
 }
 
 function discoverControls() {
@@ -47,7 +56,10 @@ function discoverControls() {
     if (!f.endsWith(".json")) continue;
     try {
       const m = JSON.parse(readFileSync(join(MANIFESTS, f), "utf8"));
-      if (m.control && m.surface) out.push({ control: m.control, surface: m.surface });
+      if (m.control && m.surface) {
+        out.push({ control: m.control, surface: m.surface,
+                   reachability: m.reachability ?? defaultReachability(m.surface) });
+      }
     } catch { /* skip malformed manifest */ }
   }
   return out.sort((a, b) => a.control.localeCompare(b.control));
@@ -60,35 +72,39 @@ function expandEnv(argv) {
       : a);
 }
 
-function syntheticUnknown(control, surface, message) {
+function syntheticUnknown(control, surface, reachability, message) {
   // A result that did not run still flows through the same shape.
-  return { control, surface, status: "unknown", evidence: message,
+  return { control, surface, reachability, status: "unknown", evidence: message,
            message, negative_control: { injected: false, fired: false, note: "" },
            attack: [], iso27001_2022: [], soc2_cc: [], not_run: true };
 }
 
-function runCheck(control, surface, opts, config) {
+function runCheck(control, surface, reachability, opts, config) {
   const script = join(CHECKS, `${control}.mjs`);
   let argv;
-  if (surface === "repo") {
+  if (reachability === "static") {
+    // Source-reachable: read the checkout. Covers repo checks and app:static.
     argv = ["--target", opts.target];
   } else {
+    // Dynamic: probe a live endpoint. Covers infra checks and app:dynamic. Its
+    // heterogeneous argv (a URL, a domain, a state fixture) comes from --config;
+    // with no entry the control cannot be probed → honest unknown, never a pass.
     const entry = config?.[control];
     if (!entry || !Array.isArray(entry.argv)) {
-      return syntheticUnknown(control, surface,
-        `no live config for infra check '${control}' — cannot probe; provide --config`);
+      return syntheticUnknown(control, surface, reachability,
+        `no live config for dynamic check '${control}' — cannot probe; provide --config`);
     }
     argv = expandEnv(entry.argv);
   }
   const r = spawnSync("node", [script, ...argv], { encoding: "utf8" });
   if (r.error) {
-    return syntheticUnknown(control, surface, `failed to spawn check: ${r.error.message}`);
+    return syntheticUnknown(control, surface, reachability, `failed to spawn check: ${r.error.message}`);
   }
   const line = (r.stdout || "").trim().split("\n").filter(Boolean).pop();
   try {
     return JSON.parse(line);
   } catch {
-    return syntheticUnknown(control, surface,
+    return syntheticUnknown(control, surface, reachability,
       `check emitted no parseable result (exit ${r.status}); stderr: ${(r.stderr || "").trim().slice(0, 200)}`);
   }
 }
@@ -101,20 +117,27 @@ function main(argv) {
     catch (e) { process.stderr.write(`could not read --config ${opts.config}: ${e.message}\n`); }
   }
 
-  const controls = discoverControls().filter((c) =>
-    opts.surface === "all" ? true : c.surface === opts.surface);
+  // Selection composes two independent filters: --surface (all|repo|infra|app)
+  // and the optional --reachability (static|dynamic). The CI gate selects
+  // `--reachability static` to get repo + app:static in one pass; the scheduled
+  // runner selects `--surface infra`; the agent run selects `--surface all`.
+  const controls = discoverControls()
+    .filter((c) => opts.surface === "all" || c.surface === opts.surface)
+    .filter((c) => !opts.reachability || c.reachability === opts.reachability);
 
-  const results = controls.map((c) => runCheck(c.control, c.surface, opts, config));
+  const results = controls.map((c) => runCheck(c.control, c.surface, c.reachability, opts, config));
 
   const counts = { pass: 0, fail: 0, unknown: 0 };
   for (const r of results) counts[r.status] = (counts[r.status] ?? 0) + 1;
 
   // Human summary to stderr; machine aggregate to stdout.
-  process.stderr.write(`\naudit — surface=${opts.surface}  target=${opts.target}\n`);
+  const reachTag = opts.reachability ? `  reachability=${opts.reachability}` : "";
+  process.stderr.write(`\naudit — surface=${opts.surface}${reachTag}  target=${opts.target}\n`);
   for (const r of results) {
     const cite = (r.attack || []).map((a) => a.id).join(",") || "—";
     const mark = { pass: "PASS", fail: "FAIL", unknown: "????" }[r.status];
-    process.stderr.write(`  [${mark}] ${r.control.padEnd(18)} ${r.surface.padEnd(5)} ${cite}\n` +
+    const surf = r.reachability ? `${r.surface}:${r.reachability[0]}` : r.surface; // e.g. app:s / app:d
+    process.stderr.write(`  [${mark}] ${r.control.padEnd(18)} ${surf.padEnd(7)} ${cite}\n` +
                          `         ${r.message || r.evidence || ""}\n`);
   }
   process.stderr.write(`\n  ${counts.pass} pass · ${counts.fail} fail · ${counts.unknown} unknown\n\n`);

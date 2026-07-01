@@ -1,0 +1,14 @@
+{
+  "control": "cookie-flags",
+  "surface": "app",
+  "reachability": "dynamic",
+  "owasp": "A07:2021 Identification and Authentication Failures",
+  "defends": "Session-cookie hardening on the running app: the app's SESSION cookie must be set with HttpOnly (not readable by JS, blunts XSS session theft), Secure (never sent over plaintext HTTP) and SameSite (CSRF mitigation). GET ${base}/login and read the Set-Cookie for the session cookie — all three flags present is the bar.",
+  "live_target": {
+    "probe": "GET ${base}${path} (default /login). The check reads the Set-Cookie header(s) via res.headers.getSetCookie(), locates the session cookie (default name `sid`, override with --cookie-name), and verifies HttpOnly + Secure + SameSite=<any> are all present (case-insensitive). All three present -> pass; cookie present but missing >=1 flag -> fail (lists missing); no session cookie emitted at all -> unknown (no session cookie to judge).",
+    "endpoint_url": null,
+    "note": "live run needs --target <login/session url>; without it returns unknown"
+  },
+  "self_guard": "Proven offline against bundled mock apps in fixtures/cookie-flags/ (good = sets sid with HttpOnly; Secure; SameSite -> pass; bad = sets sid with NO flags -> fail). The negative control is the bad mock: a flagless session cookie is injected and the missing-flags detector must fire (verdict fail). The same classifyEndpoint() path used on a live --target is exercised on the mocks first; a pass on a live target is only emitted once that negative control has fired (enforced structurally by _common.mjs).",
+  "note": "WORKING_METHOD §1 fixed-scope note: what cookie-flags probes and how it judges is not model discretion. surface=app, reachability=dynamic: the control is exercised against the live app, so it runs via the agent path (SKILL.md) against staging, never the CI gate."
+}
